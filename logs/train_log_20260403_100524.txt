@@ -1,0 +1,23 @@
+[2026-04-03 10:05:24] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-03 10:05:24] DCT mode: enabled
+[2026-04-03 10:05:24] Detected DCT dim (early) = 192
+[2026-04-03 10:05:24] Building dataset index (no file loads yet)...
+[2026-04-03 10:05:27] Built MixedDataset: total valid samples=49943 (use_dct=True, skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-03 10:05:27] Total samples (valid) found: 49943
+[2026-04-03 10:05:27] Class counts (valid samples): REAL=29943, FAKE=20000
+[2026-04-03 10:05:27] Using DCT dim = 192
+[2026-04-03 10:05:27] Class weights (CrossEntropy): REAL=0.833968, FAKE=1.248575
+[2026-04-03 10:05:27] Using EfficientNet-B0 pretrained weights
+[2026-04-03 10:05:27] Split sizes — train: 39954  val: 9989
+[2026-04-03 10:05:27] Stratified dist train — REAL=23954, FAKE=16000
+[2026-04-03 10:05:27] Stratified dist val   — REAL=5989, FAKE=4000
+[2026-04-03 10:05:29] DATA DEBUG — image batch mean=-0.1932 std=1.2030 min=-2.1179 max=2.6400
+[2026-04-03 10:05:29] DATA DEBUG — dct batch mean(mean)=-0.0000 mean(std)=1.0026
+[2026-04-03 10:05:29] Last checkpoint found. Loading for resume...
+[2026-04-03 10:05:29] Checkpoint has no phase_best_auc; resetting phase early-stopping tracker for safe resume
+[2026-04-03 10:05:29] Scheduler state restored from checkpoint.
+[2026-04-03 10:05:29] Resumed from epoch 35 (best_acc=0.9634, best_auc=0.9943, phase_best_auc=-1.0000, aug_phase=heavy)
+[2026-04-03 10:05:29] ================================================================================
+[2026-04-03 10:05:29] EPOCH 36: Switching to HEAVY augmentation (strong regularization)
+[2026-04-03 10:05:29] ================================================================================
+[2026-04-03 10:06:59] Training finished. Best acc = 0.9634

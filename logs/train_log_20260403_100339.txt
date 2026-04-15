@@ -1,0 +1,20 @@
+[2026-04-03 10:03:39] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-03 10:03:39] DCT mode: disabled
+[2026-04-03 10:03:39] Applied per-root caps: subset=8 subset_beauty=0
+[2026-04-03 10:03:39] DCT disabled by config/env (USE_DCT=0). Training image-only model.
+[2026-04-03 10:03:39] Building dataset index (no file loads yet)...
+[2026-04-03 10:03:39] Built MixedDataset: total valid samples=8 (use_dct=False, skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-03 10:03:39] Total samples (valid) found: 8
+[2026-04-03 10:03:39] Class counts (valid samples): REAL=8, FAKE=0
+[2026-04-03 10:03:39] Using DCT dim = 0
+[2026-04-03 10:03:39] Class weights (CrossEntropy): REAL=0.500000, FAKE=4.000000
+[2026-04-03 10:03:39] Using EfficientNet-B0 pretrained weights
+[2026-04-03 10:03:39] Split sizes — train: 6  val: 2
+[2026-04-03 10:03:39] Stratified dist train — REAL=6, FAKE=0
+[2026-04-03 10:03:39] Stratified dist val   — REAL=2, FAKE=0
+[2026-04-03 10:03:40] DATA DEBUG — image batch mean=-0.2428 std=1.0648 min=-2.1179 max=2.6400
+[2026-04-03 10:03:40] DATA DEBUG — dct disabled/empty vectors
+[2026-04-03 10:03:40] Last checkpoint found. Loading for resume...
+[2026-04-03 10:03:40] Scheduler state restored from checkpoint.
+[2026-04-03 10:03:40] Resumed from epoch 1 (best_acc=0.0000, best_auc=-1.0000, phase_best_auc=-1.0000, aug_phase=light)
+[2026-04-03 10:03:40] Training finished. Best acc = 0.0000

@@ -1,0 +1,30 @@
+venv/
+*.7z
+
+# Ignore data contents, but keep the directory structure via .gitkeep files.
+data/*
+!data/.gitignore
+!data/.gitkeep
+!data/raw/
+!data/processed/
+!data/test/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/test/*
+!data/test/.gitkeep
+
+# Ignore model artifacts, but keep the directory structure via .gitkeep files.
+models/*
+!models/.gitignore
+!models/.gitkeep
+!models/checkpoints/
+!models/checkpoints_smoke/
+!models/checkpoints_smoke_resume/
+models/checkpoints/*
+!models/checkpoints/.gitkeep
+models/checkpoints_smoke/*
+!models/checkpoints_smoke/.gitkeep
+models/checkpoints_smoke_resume/*
+!models/checkpoints_smoke_resume/.gitkeep

@@ -1,0 +1,30 @@
+[2026-04-01 21:29:24] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-01 21:29:24] Applied per-root caps: subset=64 subset_beauty=0
+[2026-04-01 21:29:24] Detected DCT dim (early) = 192
+[2026-04-01 21:29:24] Building dataset index (no file loads yet)...
+[2026-04-01 21:29:25] Built MixedDataset: total valid samples=64 (skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-01 21:29:25] Total samples (valid) found: 64
+[2026-04-01 21:29:25] Class counts (valid samples): REAL=64, FAKE=0
+[2026-04-01 21:29:25] Using DCT dim = 192
+[2026-04-01 21:29:25] Class weights (CrossEntropy): REAL=0.500000, FAKE=32.000000
+[2026-04-01 21:29:25] Using EfficientNet-B0 pretrained weights
+[2026-04-01 21:29:25] Split sizes — train: 51  val: 13
+[2026-04-01 21:29:25] Stratified dist train — REAL=51, FAKE=0
+[2026-04-01 21:29:25] Stratified dist val   — REAL=13, FAKE=0
+[2026-04-01 21:29:25] DATA DEBUG — image batch mean=-0.0495 std=1.1546 min=-2.1179 max=2.6400
+[2026-04-01 21:29:25] DATA DEBUG — dct batch mean(mean)=-0.0000 mean(std)=1.0026
+[2026-04-01 21:29:25] Last checkpoint found. Loading for resume...
+[2026-04-01 21:29:25] Checkpoint has no current_aug_phase; derived phase='medium' from epoch 18
+[2026-04-01 21:29:25] Scheduler state restored from checkpoint.
+[2026-04-01 21:29:25] Resumed from epoch 18 (best_acc=0.9634, best_auc=0.9943, aug_phase=medium)
+[2026-04-01 21:29:25] ================================================================================
+[2026-04-01 21:29:25] EPOCH 19: Switching to MEDIUM augmentation (smooth transition)
+[2026-04-01 21:29:25] ================================================================================
+[2026-04-01 21:29:30] [EPOCH 19] TRAIN loss=0.6860 acc=0.6471
+[2026-04-01 21:29:33] EPOCH 19 | Loss: 0.6860 | Train Acc: 1.0000 Train AUC: nan | Val Acc: 1.00000 | Val AUC: nan
+[2026-04-01 21:29:33]   Train Conf: [[48, 0], [0, 0]] | Val Conf: [[13, 0], [0, 0]]
+[2026-04-01 21:29:33]   Val Prec_fake: 1.0000 Prec_real: 0.0000 | Val Rec_fake: 1.0000 Rec_real: 0.0000
+[2026-04-01 21:29:33]   Val F1_fake: 1.0000 F1_real: 0.0000
+[2026-04-01 21:29:33] LAST CHECKPOINT saved at epoch 19
+[2026-04-01 21:29:33] LR updated: backbone=0.00002867, head=0.00047784
+[2026-04-01 21:29:33] Training finished. Best acc = 0.9634

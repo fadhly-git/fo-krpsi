@@ -1,0 +1,47 @@
+[2026-04-01 21:38:48] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-01 21:38:48] Detected DCT dim (early) = 192
+[2026-04-01 21:38:48] Building dataset index (no file loads yet)...
+[2026-04-01 21:38:51] Built MixedDataset: total valid samples=49943 (skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-01 21:38:51] Total samples (valid) found: 49943
+[2026-04-01 21:38:51] Class counts (valid samples): REAL=29943, FAKE=20000
+[2026-04-01 21:38:51] Using DCT dim = 192
+[2026-04-01 21:38:51] Class weights (CrossEntropy): REAL=0.833968, FAKE=1.248575
+[2026-04-01 21:38:51] Using EfficientNet-B0 pretrained weights
+[2026-04-01 21:38:51] Split sizes — train: 39954  val: 9989
+[2026-04-01 21:38:51] Stratified dist train — REAL=23954, FAKE=16000
+[2026-04-01 21:38:51] Stratified dist val   — REAL=5989, FAKE=4000
+[2026-04-01 21:38:52] DATA DEBUG — image batch mean=-0.1593 std=1.1728 min=-2.1179 max=2.6400
+[2026-04-01 21:38:52] DATA DEBUG — dct batch mean(mean)=0.0000 mean(std)=1.0026
+[2026-04-01 21:38:52] Last checkpoint found. Loading for resume...
+[2026-04-01 21:38:52] Checkpoint has no current_aug_phase; derived phase='medium' from epoch 18
+[2026-04-01 21:38:52] Scheduler state restored from checkpoint.
+[2026-04-01 21:38:52] Resumed from epoch 18 (best_acc=0.9634, best_auc=0.9943, aug_phase=medium)
+[2026-04-01 21:38:52] ================================================================================
+[2026-04-01 21:38:52] EPOCH 19: Switching to MEDIUM augmentation (smooth transition)
+[2026-04-01 21:38:52] ================================================================================
+[2026-04-01 22:41:14] [EPOCH 19] TRAIN loss=0.1900 acc=0.8823
+[2026-04-01 22:51:17] EPOCH 19 | Loss: 0.1900 | Train Acc: 0.9878 Train AUC: 0.9992 | Val Acc: 0.95045 | Val AUC: 0.99113
+[2026-04-01 22:51:17]   Train Conf: [[1922, 7], [32, 1239]] | Val Conf: [[5813, 176], [319, 3681]]
+[2026-04-01 22:51:17]   Val Prec_fake: 0.9480 Prec_real: 0.9544 | Val Rec_fake: 0.9706 Rec_real: 0.9203
+[2026-04-01 22:51:17]   Val F1_fake: 0.9592 F1_real: 0.9370
+[2026-04-01 22:51:17] LAST CHECKPOINT saved at epoch 19
+[2026-04-01 22:51:17] LR updated: backbone=0.00002867, head=0.00047784
+[2026-04-01 22:51:17] ================================================================================
+[2026-04-01 22:51:17] EPOCH 20: Switching to HEAVY augmentation (strong regularization)
+[2026-04-01 22:51:17] ================================================================================
+[2026-04-01 22:51:17] AUG PHASE changed medium -> heavy; early-stopping counter reset
+[2026-04-01 23:50:05] [EPOCH 20] TRAIN loss=0.4491 acc=0.7431
+[2026-04-01 23:59:08] EPOCH 20 | Loss: 0.4491 | Train Acc: 0.8641 Train AUC: 0.9459 | Val Acc: 0.86025 | Val AUC: 0.94350
+[2026-04-01 23:59:08]   Train Conf: [[1743, 145], [290, 1022]] | Val Conf: [[5514, 475], [921, 3079]]
+[2026-04-01 23:59:08]   Val Prec_fake: 0.8569 Prec_real: 0.8663 | Val Rec_fake: 0.9207 Rec_real: 0.7698
+[2026-04-01 23:59:08]   Val F1_fake: 0.8876 F1_real: 0.8152
+[2026-04-01 23:59:09] LAST CHECKPOINT saved at epoch 20
+[2026-04-01 23:59:09] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch20.json
+[2026-04-01 23:59:09] LR updated: backbone=0.00002731, head=0.00045504
+[2026-04-02 00:57:12] [EPOCH 21] TRAIN loss=0.4081 acc=0.7635
+[2026-04-02 01:06:11] EPOCH 21 | Loss: 0.4081 | Train Acc: 0.8944 Train AUC: 0.9650 | Val Acc: 0.87256 | Val AUC: 0.95135
+[2026-04-02 01:06:11]   Train Conf: [[1833, 117], [221, 1029]] | Val Conf: [[5544, 445], [828, 3172]]
+[2026-04-02 01:06:11]   Val Prec_fake: 0.8701 Prec_real: 0.8770 | Val Rec_fake: 0.9257 Rec_real: 0.7930
+[2026-04-02 01:06:11]   Val F1_fake: 0.8970 F1_real: 0.8329
+[2026-04-02 01:06:11] LAST CHECKPOINT saved at epoch 21
+[2026-04-02 01:06:11] LR updated: backbone=0.00002592, head=0.00043172

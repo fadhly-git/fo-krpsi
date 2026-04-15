@@ -1,0 +1,26 @@
+[2026-04-03 10:04:01] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-03 10:04:01] DCT mode: disabled
+[2026-04-03 10:04:01] Applied per-root caps: subset=8 subset_beauty=0
+[2026-04-03 10:04:01] DCT disabled by config/env (USE_DCT=0). Training image-only model.
+[2026-04-03 10:04:01] Building dataset index (no file loads yet)...
+[2026-04-03 10:04:02] Built MixedDataset: total valid samples=8 (use_dct=False, skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-03 10:04:02] Total samples (valid) found: 8
+[2026-04-03 10:04:02] Class counts (valid samples): REAL=8, FAKE=0
+[2026-04-03 10:04:02] Using DCT dim = 0
+[2026-04-03 10:04:02] Class weights (CrossEntropy): REAL=0.500000, FAKE=4.000000
+[2026-04-03 10:04:02] Using EfficientNet-B0 pretrained weights
+[2026-04-03 10:04:02] Split sizes — train: 6  val: 2
+[2026-04-03 10:04:02] Stratified dist train — REAL=6, FAKE=0
+[2026-04-03 10:04:02] Stratified dist val   — REAL=2, FAKE=0
+[2026-04-03 10:04:02] DATA DEBUG — image batch mean=-0.1133 std=1.0455 min=-2.1179 max=2.6400
+[2026-04-03 10:04:02] DATA DEBUG — dct disabled/empty vectors
+[2026-04-03 10:04:02] No resume checkpoint found. Starting fresh training.
+[2026-04-03 10:04:02] [EPOCH 1] TRAIN loss=0.7168 acc=0.5000
+[2026-04-03 10:04:03] EPOCH 01 | Loss: 0.7168 | Train Acc: 0.6667 Train AUC: nan | Val Acc: 1.00000 | Val AUC: nan
+[2026-04-03 10:04:03]   Train Conf: [[4, 2], [0, 0]] | Val Conf: [[2, 0], [0, 0]]
+[2026-04-03 10:04:03]   Val Prec_fake: 1.0000 Prec_real: 0.0000 | Val Rec_fake: 1.0000 Rec_real: 0.0000
+[2026-04-03 10:04:03]   Val F1_fake: 1.0000 F1_real: 0.0000
+[2026-04-03 10:04:03] LAST CHECKPOINT saved at epoch 1
+[2026-04-03 10:04:04] NEW BEST bootstrap saved (AUC unavailable): acc=1.0000 epoch=1
+[2026-04-03 10:04:04] LR updated: backbone=0.00000010, head=0.00000010
+[2026-04-03 10:04:04] Training finished. Best acc = 1.0000

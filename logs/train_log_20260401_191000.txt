@@ -1,0 +1,28 @@
+[2026-04-01 19:10:00] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-01 19:10:00] Detected DCT dim (early) = 192
+[2026-04-01 19:10:00] Building dataset index (no file loads yet)...
+[2026-04-01 19:10:03] Built MixedDataset: total valid samples=49943 (skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-01 19:10:03] Total samples (valid) found: 49943
+[2026-04-01 19:10:03] Class counts (valid samples): REAL=29943, FAKE=20000
+[2026-04-01 19:10:03] Using DCT dim = 192
+[2026-04-01 19:10:03] Class weights (CrossEntropy): REAL=0.833968, FAKE=1.248575
+[2026-04-01 19:10:03] Using EfficientNet-B0 pretrained weights
+[2026-04-01 19:10:03] Split sizes — train: 39954  val: 9989
+[2026-04-01 19:10:03] Stratified dist train — REAL=23954, FAKE=16000
+[2026-04-01 19:10:03] Stratified dist val   — REAL=5989, FAKE=4000
+[2026-04-01 19:10:04] DATA DEBUG — image batch mean=-0.0722 std=1.2356 min=-2.1179 max=2.6400
+[2026-04-01 19:10:04] DATA DEBUG — dct batch mean(mean)=-0.0000 mean(std)=1.0026
+[2026-04-01 19:10:04] Last checkpoint found. Loading for resume...
+[2026-04-01 19:10:04] Scheduler state restored from checkpoint.
+[2026-04-01 19:10:04] Resumed from epoch 17 (best_acc=0.9634, best_auc=0.9943)
+[2026-04-01 19:10:04] ================================================================================
+[2026-04-01 19:10:04] EPOCH 18: Switching to MEDIUM augmentation (smooth transition)
+[2026-04-01 19:10:04] ================================================================================
+[2026-04-01 20:15:03] [EPOCH 18] TRAIN loss=0.1975 acc=0.8840
+[2026-04-01 20:25:54] EPOCH 18 | Loss: 0.1975 | Train Acc: 0.9862 Train AUC: 0.9993 | Val Acc: 0.94994 | Val AUC: 0.99070
+[2026-04-01 20:25:54]   Train Conf: [[1897, 17], [27, 1259]] | Val Conf: [[5760, 229], [271, 3729]]
+[2026-04-01 20:25:54]   Val Prec_fake: 0.9551 Prec_real: 0.9421 | Val Rec_fake: 0.9618 Rec_real: 0.9323
+[2026-04-01 20:25:54]   Val F1_fake: 0.9584 F1_real: 0.9372
+[2026-04-01 20:25:54] LAST CHECKPOINT saved at epoch 18
+[2026-04-01 20:25:54] EARLY STOPPING triggered at epoch 18. Best AUC: 0.9943
+[2026-04-01 20:25:54] Training finished. Best acc = 0.9634

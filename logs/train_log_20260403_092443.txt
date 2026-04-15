@@ -1,0 +1,10 @@
+[2026-04-03 09:24:43] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-03 09:24:43] DCT mode: enabled
+[2026-04-03 09:24:43] Applied per-root caps: subset=64 subset_beauty=0
+[2026-04-03 09:24:43] Detected DCT dim (early) = 192
+[2026-04-03 09:24:43] Building dataset index (no file loads yet)...
+[2026-04-03 09:24:43] Built MixedDataset: total valid samples=64 (use_dct=True, skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-03 09:24:43] Total samples (valid) found: 64
+[2026-04-03 09:24:43] Class counts (valid samples): REAL=64, FAKE=0
+[2026-04-03 09:24:43] Using DCT dim = 192
+[2026-04-03 09:24:43] Class weights (CrossEntropy): REAL=0.500000, FAKE=32.000000

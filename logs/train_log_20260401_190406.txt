@@ -1,0 +1,46 @@
+[2026-04-01 19:04:06] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-04-01 19:04:06] Applied per-root caps: subset=32 subset_beauty=0
+[2026-04-01 19:04:06] Detected DCT dim (early) = 192
+[2026-04-01 19:04:06] Building dataset index (no file loads yet)...
+[2026-04-01 19:04:07] Built MixedDataset: total valid samples=32 (skipped_nonimage=0, skipped_missing_dct=0)
+[2026-04-01 19:04:07] Total samples (valid) found: 32
+[2026-04-01 19:04:07] Class counts (valid samples): REAL=32, FAKE=0
+[2026-04-01 19:04:07] Using DCT dim = 192
+[2026-04-01 19:04:07] Class weights (CrossEntropy): REAL=0.500000, FAKE=16.000000
+[2026-04-01 19:04:07] Using EfficientNet-B0 pretrained weights
+[2026-04-01 19:04:07] Split sizes — train: 26  val: 6
+[2026-04-01 19:04:07] Stratified dist train — REAL=26, FAKE=0
+[2026-04-01 19:04:07] Stratified dist val   — REAL=6, FAKE=0
+[2026-04-01 19:04:08] DATA DEBUG — image batch mean=-0.0645 std=1.0664 min=-2.1179 max=2.6400
+[2026-04-01 19:04:08] DATA DEBUG — dct batch mean(mean)=-0.0000 mean(std)=1.0026
+[2026-04-01 19:04:08] No resume checkpoint found. Starting fresh training.
+[2026-04-01 19:04:10] [EPOCH 1] TRAIN loss=0.4525 acc=0.9615
+[2026-04-01 19:04:12] EPOCH 01 | Loss: 0.4525 | Train Acc: 1.0000 Train AUC: nan | Val Acc: 1.00000 | Val AUC: nan
+[2026-04-01 19:04:12]   Train Conf: [[26, 0], [0, 0]] | Val Conf: [[6, 0], [0, 0]]
+[2026-04-01 19:04:12]   Val Prec_fake: 1.0000 Prec_real: 0.0000 | Val Rec_fake: 1.0000 Rec_real: 0.0000
+[2026-04-01 19:04:12]   Val F1_fake: 1.0000 F1_real: 0.0000
+[2026-04-01 19:04:12] LAST CHECKPOINT saved at epoch 1
+[2026-04-01 19:04:12] LR updated: backbone=0.00002253, head=0.00037503
+[2026-04-01 19:04:12] ================================================================================
+[2026-04-01 19:04:12] EPOCH 2: Switching to MEDIUM augmentation (smooth transition)
+[2026-04-01 19:04:12] ================================================================================
+[2026-04-01 19:04:12] AUG PHASE changed light -> medium; early-stopping counter reset
+[2026-04-01 19:04:14] [EPOCH 2] TRAIN loss=0.2431 acc=1.0000
+[2026-04-01 19:04:16] EPOCH 02 | Loss: 0.2431 | Train Acc: 1.0000 Train AUC: nan | Val Acc: 1.00000 | Val AUC: nan
+[2026-04-01 19:04:16]   Train Conf: [[26, 0], [0, 0]] | Val Conf: [[6, 0], [0, 0]]
+[2026-04-01 19:04:16]   Val Prec_fake: 1.0000 Prec_real: 0.0000 | Val Rec_fake: 1.0000 Rec_real: 0.0000
+[2026-04-01 19:04:16]   Val F1_fake: 1.0000 F1_real: 0.0000
+[2026-04-01 19:04:16] LAST CHECKPOINT saved at epoch 2
+[2026-04-01 19:04:16] LR updated: backbone=0.00000758, head=0.00012508
+[2026-04-01 19:04:16] ================================================================================
+[2026-04-01 19:04:16] EPOCH 3: Switching to HEAVY augmentation (strong regularization)
+[2026-04-01 19:04:16] ================================================================================
+[2026-04-01 19:04:16] AUG PHASE changed medium -> heavy; early-stopping counter reset
+[2026-04-01 19:04:19] [EPOCH 3] TRAIN loss=0.1716 acc=1.0000
+[2026-04-01 19:04:20] EPOCH 03 | Loss: 0.1716 | Train Acc: 1.0000 Train AUC: nan | Val Acc: 1.00000 | Val AUC: nan
+[2026-04-01 19:04:20]   Train Conf: [[26, 0], [0, 0]] | Val Conf: [[6, 0], [0, 0]]
+[2026-04-01 19:04:20]   Val Prec_fake: 1.0000 Prec_real: 0.0000 | Val Rec_fake: 1.0000 Rec_real: 0.0000
+[2026-04-01 19:04:20]   Val F1_fake: 1.0000 F1_real: 0.0000
+[2026-04-01 19:04:20] LAST CHECKPOINT saved at epoch 3
+[2026-04-01 19:04:20] LR updated: backbone=0.00000010, head=0.00000010
+[2026-04-01 19:04:20] Training finished. Best acc = 0.0000
