@@ -1,0 +1,16 @@
+[2026-07-07 22:43:03] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-07-07 22:43:03] DCT mode: enabled
+[2026-07-07 22:43:03] Detected DCT dim (early) = 192
+[2026-07-07 22:43:03] Building dataset index (no file loads yet)...
+[2026-07-07 22:43:06] [FaceOnlyDataset] Built: real=10000 fake=21250 total=31250 skipped=0 use_dct=True
+[2026-07-07 22:43:06] Total samples (valid) found: 31250
+[2026-07-07 22:43:06] Class counts (valid samples): REAL=10000, FAKE=21250
+[2026-07-07 22:43:06] Using DCT dim = 192
+[2026-07-07 22:43:06] Class weights (CrossEntropy): REAL=1.562500, FAKE=0.735294
+[2026-07-07 22:43:06] Using EfficientNet-B0 pretrained weights
+[2026-07-07 22:43:06] Split sizes — train: 25000  val: 6250
+[2026-07-07 22:43:06] Stratified dist train — REAL=8000, FAKE=17000
+[2026-07-07 22:43:06] Stratified dist val   — REAL=2000, FAKE=4250
+[2026-07-07 22:43:07] DATA DEBUG — image batch mean=0.0901 std=1.1340 min=-2.1179 max=2.6400
+[2026-07-07 22:43:07] DATA DEBUG — dct batch mean(mean)=-0.0000 mean(std)=1.0026
+[2026-07-07 22:43:07] No resume checkpoint found. Starting fresh training.

@@ -1,0 +1,33 @@
+[2026-06-14 08:01:14] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-06-14 08:01:14] DCT mode: disabled
+[2026-06-14 08:01:14] DCT disabled by config/env (USE_DCT=0). Training image-only model.
+[2026-06-14 08:01:14] Building dataset index (no file loads yet)...
+[2026-06-14 08:01:16] Built MixedDataset: total valid samples=49943 (use_dct=False, skipped_nonimage=0, skipped_missing_dct=0)
+[2026-06-14 08:01:16] Total samples (valid) found: 49943
+[2026-06-14 08:01:16] Class counts (valid samples): REAL=29943, FAKE=20000
+[2026-06-14 08:01:16] Using DCT dim = 0
+[2026-06-14 08:01:16] Class weights (CrossEntropy): REAL=0.833968, FAKE=1.248575
+[2026-06-14 08:01:16] Using EfficientNet-B0 pretrained weights
+[2026-06-14 08:01:16] Split sizes — train: 39954  val: 9989
+[2026-06-14 08:01:16] Stratified dist train — REAL=23954, FAKE=16000
+[2026-06-14 08:01:16] Stratified dist val   — REAL=5989, FAKE=4000
+[2026-06-14 08:01:18] DATA DEBUG — image batch mean=-0.0531 std=1.2353 min=-2.1179 max=2.6400
+[2026-06-14 08:01:18] DATA DEBUG — dct disabled/empty vectors
+[2026-06-14 08:01:18] No resume checkpoint found. Starting fresh training.
+[2026-06-14 09:29:35] [EPOCH 1] TRAIN loss=0.3426 acc=0.8318
+[2026-06-14 09:40:44] EPOCH 01 | Loss: 0.3426 | Train Acc: 0.9087 Train AUC: 0.9720 | Val Acc: 0.90970 | Val AUC: 0.97163
+[2026-06-14 09:40:44]   Train Conf: [[1732, 172], [120, 1176]] | Val Conf: [[5464, 525], [377, 3623]]
+[2026-06-14 09:40:44]   Val Prec_fake: 0.9355 Prec_real: 0.8734 | Val Rec_fake: 0.9123 Rec_real: 0.9058
+[2026-06-14 09:40:44]   Val F1_fake: 0.9238 F1_real: 0.8893
+[2026-06-14 09:40:44] LAST CHECKPOINT saved at epoch 1
+[2026-06-14 09:40:44] NEW BEST saved: auc=0.9716 acc=0.9097 epoch=1
+[2026-06-14 09:40:44] LR updated: backbone=0.00002996, head=0.00049939
+[2026-06-14 10:56:50] [EPOCH 2] TRAIN loss=0.2438 acc=0.8844
+[2026-06-14 11:07:10] EPOCH 02 | Loss: 0.2438 | Train Acc: 0.9441 Train AUC: 0.9906 | Val Acc: 0.92822 | Val AUC: 0.98241
+[2026-06-14 11:07:10]   Train Conf: [[1827, 145], [34, 1194]] | Val Conf: [[5418, 571], [146, 3854]]
+[2026-06-14 11:07:10]   Val Prec_fake: 0.9738 Prec_real: 0.8710 | Val Rec_fake: 0.9047 Rec_real: 0.9635
+[2026-06-14 11:07:10]   Val F1_fake: 0.9379 F1_real: 0.9149
+[2026-06-14 11:07:10] LAST CHECKPOINT saved at epoch 2
+[2026-06-14 11:07:10] NEW BEST saved: auc=0.9824 acc=0.9282 epoch=2
+[2026-06-14 11:07:10] LR updated: backbone=0.00002985, head=0.00049757
+[2026-06-14 11:29:54] Training finished. Best acc = 0.9282

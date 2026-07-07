@@ -18,15 +18,13 @@ from config import (
 	CFG,
 	CHECKPOINT_DIR,
 	DATA_ROOT,
-	DATA_ROOT_BEAUTY,
 	DCT_ROOT,
-	DCT_ROOT_BEAUTY,
 	LOG_DIR,
 	apply_cpu_safety_overrides,
 	apply_runtime_overrides,
 	resolve_device,
 )
-from dataset import MixedDataset, detect_dct_dim
+from dataset import FaceOnlyDataset, detect_dct_dim
 from model import build_backbone, build_head
 from transforms import heavy_transform, light_transform, medium_transform
 from validate import save_param_debug, validate
@@ -105,9 +103,9 @@ def main():
 		)
 
 	if use_dct:
-		dct_dim = detect_dct_dim(DCT_ROOT) or detect_dct_dim(DCT_ROOT_BEAUTY)
+		dct_dim = detect_dct_dim(DCT_ROOT)
 		if dct_dim is None:
-			log("No precomputed DCT found for true-fake roots — proceeding with dct_dim=0 (zeros will be used)")
+			log("No precomputed DCT found — proceeding with dct_dim=0 (zeros will be used)")
 			dct_dim = 0
 		else:
 			log(f"Detected DCT dim (early) = {dct_dim}")
@@ -116,14 +114,12 @@ def main():
 		log("DCT disabled by config/env (USE_DCT=0). Training image-only model.")
 
 	log("Building dataset index (no file loads yet)...")
-	full_dataset = MixedDataset(
+	full_dataset = FaceOnlyDataset(
 		DATA_ROOT,
-		DATA_ROOT_BEAUTY,
-		DCT_ROOT,
-		DCT_ROOT_BEAUTY,
+		dct_root=DCT_ROOT,
 		transform=light_transform,
-		max_root1=CFG.get("max_subset_images"),
-		max_root2=CFG.get("max_subset_beauty_images"),
+		max_fake=CFG.get("max_subset_images"),
+		max_real=CFG.get("max_subset_beauty_images"),
 		dct_dim=dct_dim,
 		use_dct=use_dct,
 		log_fn=log,
