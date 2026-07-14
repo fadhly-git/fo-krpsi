@@ -44,7 +44,10 @@ EVAL_TRANSFORM = A.Compose([
     ToTensorV2(),
 ])
 
-# Definisi kondisi degradasi (kondisi, parameter, label)
+# Batas maksimum sampel untuk robustness eval.
+# Cukup representatif untuk AUC yang stabil, drastis memangkas waktu CPU.
+# Set ke None untuk evaluasi penuh (bisa memakan 10+ jam di CPU).
+MAX_EVAL_SAMPLES = 2000
 CONDITIONS = [
     ("Clean",      None,   "Clean"),
     ("JPEG",       30,     "JPEG-30"),
@@ -58,6 +61,10 @@ CONDITIONS = [
     ("Blur",       7,      "Blur-7×7"),
     ("Downscale",  0.5,    "DS-0.5"),
     ("Downscale",  0.25,   "DS-0.25"),
+    # Occlusion: kotak hitam di tengah, sisi = ratio × dimensi gambar
+    ("Occlusion",  0.30,   "Occ-30%"),
+    ("Occlusion",  0.50,   "Occ-50%"),
+    ("Occlusion",  0.70,   "Occ-70%"),
 ]
 
 # ─── Fungsi Degradasi (OpenCV) ─────────────────────────────────────────────────
@@ -91,6 +98,26 @@ def apply_downscale_upscale(img_rgb_uint8, factor):
     return cv2.resize(small, (w, h), interpolation=cv2.INTER_LINEAR)
 
 
+def apply_occlusion(img_rgb_uint8, ratio):
+    """Kotak hitam di tengah gambar (deterministic).
+
+    Args:
+        ratio: Fraksi sisi gambar yang ditutupi (0.30 = 30% sisi, 9% area;
+               0.50 = 50% sisi, 25% area; 0.70 = 70% sisi, 49% area).
+    """
+    h, w = img_rgb_uint8.shape[:2]
+    size_h = int(h * ratio)
+    size_w = int(w * ratio)
+    cy, cx = h // 2, w // 2
+    y1 = max(0, cy - size_h // 2)
+    x1 = max(0, cx - size_w // 2)
+    y2 = min(h, y1 + size_h)
+    x2 = min(w, x1 + size_w)
+    out = img_rgb_uint8.copy()
+    out[y1:y2, x1:x2] = 0
+    return out
+
+
 def degrade(img_rgb_uint8, cond_type, param):
     """Terapkan degradasi sesuai tipe dan parameter."""
     if cond_type == "Clean" or cond_type is None:
@@ -103,6 +130,8 @@ def degrade(img_rgb_uint8, cond_type, param):
         return apply_gaussian_blur(img_rgb_uint8, param)
     elif cond_type == "Downscale":
         return apply_downscale_upscale(img_rgb_uint8, param)
+    elif cond_type == "Occlusion":
+        return apply_occlusion(img_rgb_uint8, param)
     else:
         raise ValueError(f"Kondisi tidak dikenal: {cond_type}")
 
@@ -274,7 +303,29 @@ def run(return_clean_probs=False):
     # Dapatkan val subset
     print("[Task1] Membangun val subset...")
     val_samples = get_val_subset()
-    print(f"[Task1] Val subset: {len(val_samples)} sampel")
+    print(f"[Task1] Val subset (full): {len(val_samples)} sampel")
+
+    # Batasi jumlah sampel jika MAX_EVAL_SAMPLES diset
+    if MAX_EVAL_SAMPLES is not None and len(val_samples) > MAX_EVAL_SAMPLES:
+        # Stratified sampling: pertahankan rasio REAL:FAKE
+        real_samples = [s for s in val_samples if s[2] == 0]
+        fake_samples = [s for s in val_samples if s[2] == 1]
+        n_total = len(val_samples)
+        n_real_target = int(MAX_EVAL_SAMPLES * len(real_samples) / n_total)
+        n_fake_target = MAX_EVAL_SAMPLES - n_real_target
+        rng = np.random.default_rng(42)
+        real_sel = [real_samples[i] for i in rng.choice(len(real_samples), n_real_target, replace=False)]
+        fake_sel = [fake_samples[i] for i in rng.choice(len(fake_samples), n_fake_target, replace=False)]
+        val_samples = real_sel + fake_sel
+        rng.shuffle(val_samples)  # type: ignore[arg-type]
+        val_samples = list(val_samples)
+        print(
+            f"[Task1] Sampel dibatasi ke {len(val_samples)} "
+            f"(REAL={n_real_target}, FAKE={n_fake_target}) "
+            f"— ubah MAX_EVAL_SAMPLES=None untuk evaluasi penuh"
+        )
+    else:
+        print(f"[Task1] Menggunakan seluruh val subset: {len(val_samples)} sampel")
 
     # Seed untuk reproducibility noise Gaussian
     np.random.seed(42)

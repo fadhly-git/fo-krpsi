@@ -48,6 +48,11 @@ CFG = {
 	# Ref: Prechelt, 1998 (early stopping)
 	"early_stopping_patience": 15,
 	"min_epoch_before_stop": 25,
+	# 3-way split: test set held out for final reporting (Batasan 1)
+	"test_ratio": 0.1,
+	# LR reset values when augmentation phase transitions (avoids LR=0 at heavy phase start)
+	"lr_phase_reset_backbone": 1e-5,
+	"lr_phase_reset_head": 2e-4,
 }
 
 

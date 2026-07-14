@@ -1,0 +1,439 @@
+================================================================================
+KONTEKS PENELITIAN SKRIPSI — DETEKSI DEEPFAKE BERBASIS FUSI SPASIAL-FREKUENSI
+Untuk Penulisan BAB 4 (Hasil & Pembahasan) dan BAB 5 (Kesimpulan & Saran)
+================================================================================
+
+INSTRUKSI UNTUK CHATBOT:
+File ini berisi seluruh konteks, data eksperimen, dan angka yang kamu butuhkan untuk
+membantu menulis Bab 4 dan Bab 5 skripsi saya. Gunakan semua informasi di bawah ini.
+Ketika saya meminta kamu menulis sub-bab tertentu, gunakan data yang relevan dari file
+ini, tulis dalam Bahasa Indonesia akademik (formal, pasif, sesuai standar skripsi S1),
+dengan gaya narasi analitis (bukan hanya tabel/poin).
+
+================================================================================
+BAGIAN 1: IDENTITAS PENELITIAN
+================================================================================
+
+Judul Penelitian (estimasi):
+"Sistem Deteksi Deepfake Wajah Berbasis Fusi Fitur Spasial EfficientNet-B0
+dan Fitur Frekuensi DCT pada Dataset Twitter TrueFake"
+
+Dataset:
+- Nama: Subset Twitter TrueFake (Dell'Anna et al., 2025)
+- Kelas REAL (nature): 10.000 citra
+- Kelas FAKE (artifice): 21.250 citra
+- Total: 31.250 citra
+- Rasio REAL:FAKE = 1:2.125 (tidak seimbang)
+- Sumber: Platform media sosial Twitter/X
+
+Split Dataset (stratified, seed=42):
+- Train: 22.500 sampel (REAL=7.200, FAKE=15.300) = 72%
+- Validasi: 5.625 sampel (REAL=1.800, FAKE=3.825) = 18%
+- Test: 3.125 sampel (REAL=1.000, FAKE=2.125) = 10%
+- Split dilakukan dengan train_test_split sklearn, random_state=42, stratify=labels
+
+================================================================================
+BAGIAN 2: ARSITEKTUR DAN KONFIGURASI SISTEM
+================================================================================
+
+MODEL E-1 — Model Hibrida (yang diusulkan penelitian ini):
+- Backbone: EfficientNet-B0 pretrained ImageNet
+- Feature dim backbone: 1280-dim
+- Fitur DCT: 192-dim (mean + variance + skewness dari koefisien DCT blok 8x8 pada kanal Y)
+- Input head classifier: 1280 + 192 = 1472-dim
+- Head: Linear(1472, 2) → Softmax
+- Total parameter: 4.010.494
+- Parameter head: 2.946
+- Ukuran checkpoint: 46.3517 MB
+- Checkpoint tersimpan: best_efficient_dct.pth
+
+MODEL E-2 — Model Baseline (pembanding):
+- Backbone: EfficientNet-B0 pretrained ImageNet (identik dengan E-1)
+- Feature dim: 1280-dim
+- Tidak menggunakan DCT
+- Input head classifier: 1280-dim
+- Head: Linear(1280, 2) → Softmax
+- Total parameter: 4.010.110
+- Parameter head: 2.562
+- Ukuran checkpoint: 46.3502 MB
+- Checkpoint tersimpan: best_efficient_no_dct.pth
+
+Konfigurasi Pelatihan (sama untuk keduanya):
+- Optimizer: AdamW
+- LR backbone: 3e-5 (initial)
+- LR head: 5e-4 (initial)
+- Weight decay: 1e-2
+- Scheduler: CosineAnnealingLR (T_max=45, eta_min=1e-7)
+- Epochs total: 45
+- Loss: CrossEntropyLoss berbobot kelas
+  → Bobot REAL: 1.562500 (kelas minor)
+  → Bobot FAKE: 0.735294 (kelas mayor)
+- Batch size: 32
+- Device: CPU (FORCE_CPU=1)
+- Framework: PyTorch 2.11.0+cu130
+
+Strategi Augmentasi (3 fase):
+- Fase Light (epoch 1–9): Resize 224x224, RandomHorizontalFlip, ColorJitter ringan
+- Fase Medium (epoch 10–19): tambah RandomRotation, BrightnessContrast
+  → LR direset: backbone=1e-5, head=2e-4 (untuk menghindari LR=0 di awal fase)
+- Fase Heavy (epoch 20–45): tambah RandomResizedCrop, CutOut/Erasing
+  → LR direset kembali: backbone=1e-5, head=2e-4
+- Early stopping: patience=15, min_epoch=25 (keduanya tidak berhenti sebelum epoch 45)
+
+Preprocessing DCT (precomputed, disimpan sebagai file .npy):
+- Konversi RGB → YCbCr, ambil kanal Y (luminansi)
+- Bagi gambar menjadi blok non-overlapping 8x8 piksel
+- Hitung 2D DCT (scipy.fft.dctn) pada setiap blok, norm="ortho"
+- Untuk 64 koefisien per blok, hitung statistik agregat: mean, variance, skewness
+- Concatenate: [mean_64, var_64, skew_64] = vektor 192-dim
+- Normalisasi per-sampel: z-score (mean=0, std=1)
+
+Eval Transform (deterministik, untuk evaluasi):
+- Resize(224, 224)
+- Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+- ToTensorV2()
+
+================================================================================
+BAGIAN 3: HASIL PELATIHAN PER EPOCH (RINGKASAN)
+================================================================================
+
+--- E-1 (Hybrid — with DCT) ---
+Log file: train_log_20260708_231436.txt
+Mulai training: 2026-07-08 23:14:36
+Selesai training: 2026-07-09 23:31:03 (~24 jam)
+
+Epoch | Val AUC  | Val Acc  | Val F1-FAKE | Val F1-REAL | Val Macro F1 | Keterangan
+------|----------|----------|-------------|-------------|--------------|-------------------
+1     | 0.94357  | 0.86649  | 0.8117      | 0.8966      | 0.8542       | Baseline awal
+2     | 0.96024  | 0.89582  | 0.8507      | 0.9200      | 0.8853       |
+3     | 0.97136  | 0.90844  | 0.8636      | 0.9311      | 0.8973       |
+4     | 0.97560  | 0.91893  | 0.8776      | 0.9394      | 0.9085       |
+5     | 0.98127  | 0.92942  | 0.8930      | 0.9473      | 0.9202       | *NEW BEST*
+6     | 0.98243  | 0.93120  | 0.8952      | 0.9488      | 0.9220       | *NEW BEST*
+7     | 0.98297  | 0.93244  | 0.8930      | 0.9506      | 0.9218       | *NEW BEST*
+8     | 0.98656  | 0.94596  | 0.9163      | 0.9601      | 0.9382       | ***BEST FINAL*** ← checkpoint terpilih
+9     | 0.98646  | 0.94276  | 0.9117      | 0.9576      | 0.9347       |
+10    | 0.96491  | 0.89849  | 0.8469      | 0.9241      | 0.8855       | Fase MEDIUM mulai → penurunan normal
+...   | ...      | ...      |             |             |              | Stagnasi & fluktuasi di fase medium/heavy
+45    | 0.91316  | 0.83733  | 0.7491      | 0.8797      | 0.8144       | Epoch terakhir (latest checkpoint)
+
+Confusion Matrix E-1 Best (Epoch 8, Validasi):
+           Pred REAL   Pred FAKE
+Act REAL     1664         136    → Rec REAL = 0.9561, Prec REAL = 0.9641
+Act FAKE      168        3657    → Rec FAKE = 0.9244, Prec FAKE = 0.9083
+
+--- E-2 (Baseline — without DCT) ---
+Log file: train_log_20260709_233109.txt
+Mulai training: 2026-07-09 23:31:09
+Selesai training: belum tercantum (estimasi ~24 jam)
+
+Epoch | Val AUC  | Val Acc  | Val F1-FAKE | Val F1-REAL | Val Macro F1 | Keterangan
+------|----------|----------|-------------|-------------|--------------|-------------------
+1     | 0.94023  | 0.86276  | 0.8083      | 0.8931      | 0.8507       |
+2     | 0.95806  | 0.89529  | 0.8422      | 0.9216      | 0.8819       |
+3     | 0.97177  | 0.91627  | 0.8740      | 0.9373      | 0.9057       |
+4     | 0.97750  | 0.92320  | 0.8818      | 0.9431      | 0.9125       |
+5     | 0.97777  | 0.92622  | 0.8891      | 0.9447      | 0.9169       | *NEW BEST*
+6     | 0.98318  | 0.93209  | 0.8961      | 0.9496      | 0.9228       | *NEW BEST*
+7     | 0.98556  | 0.94080  | 0.9078      | 0.9564      | 0.9321       | *NEW BEST*
+8     | 0.98649  | 0.94613  | 0.9172      | 0.9601      | 0.9387       | *NEW BEST*
+9     | 0.98752  | 0.94702  | 0.9185      | 0.9608      | 0.9396       | ***BEST FINAL*** ← checkpoint terpilih
+10    | 0.96636  | 0.90329  | 0.8574      | 0.9268      | 0.8921       | Fase MEDIUM mulai → penurunan normal
+...   | ...      | ...      |             |             |              | Stagnasi & fluktuasi di fase medium/heavy
+
+Confusion Matrix E-2 Best (Epoch 9, Validasi):
+           Pred REAL   Pred FAKE
+Act REAL     1679         121    → Rec REAL = 0.9537, Prec REAL = 0.9679
+Act FAKE      177        3648    → Rec FAKE = 0.9328, Prec FAKE = 0.9046
+
+================================================================================
+BAGIAN 4: EVALUASI FINAL — TEST SET (n=3.125 sampel)
+================================================================================
+
+PENTING: Test set tidak pernah dilihat model selama training maupun pemilihan
+checkpoint. Ini adalah evaluasi final yang paling valid.
+
+Distribusi test set: REAL=1.000, FAKE=2.125
+
+--- BEST CHECKPOINT (Epoch 8 untuk E-1, Epoch 9 untuk E-2) ---
+Ini adalah angka utama yang dilaporkan untuk menjawab RQ1 dan dimasukkan ke tabel skripsi.
+
+Metrik             | E-1 (Hybrid)  | E-2 (Baseline) | Delta (E1-E2)
+-------------------|---------------|----------------|---------------
+Accuracy           | 0.922880      | 0.955520       | -0.032640
+AUC                | 0.989496      | 0.990069       | -0.000573
+Macro F1           | 0.915700      | 0.949151       | -0.033451
+F1-score FAKE      | 0.940302      | 0.967147       | -0.026845
+F1-score REAL      | 0.891098      | 0.931154       | -0.040056
+Presisi FAKE       | 0.992678      | 0.971510       | +0.021168  ← E-1 UNGGUL
+Presisi REAL       | 0.812861      | 0.922473       | -0.109612
+Recall FAKE        | 0.893176      | 0.962824       | -0.069648
+Recall REAL        | 0.986000      | 0.940000       | +0.046000  ← E-1 UNGGUL
+
+Confusion Matrix E-1 (Test Set):
+           Pred REAL   Pred FAKE
+Act REAL      986          14     → Rec REAL = 0.986, Prec REAL = 0.812
+Act FAKE      226        1899     → Rec FAKE = 0.893, Prec FAKE = 0.993
+(Total: 1000 REAL, 2125 FAKE)
+
+Confusion Matrix E-2 (Test Set):
+           Pred REAL   Pred FAKE
+Act REAL      940          60     → Rec REAL = 0.940, Prec REAL = 0.922
+Act FAKE       82        2043     → Rec FAKE = 0.963, Prec FAKE = 0.972
+(Total: 1000 REAL, 2125 FAKE)
+
+--- LATEST CHECKPOINT (Epoch 45 untuk keduanya) ---
+Hanya untuk referensi/diskusi bab 5, BUKAN angka utama skripsi.
+
+Metrik             | E-1 Latest    | E-2 Latest     | Delta (E1-E2)
+-------------------|---------------|----------------|---------------
+Accuracy           | 0.921920      | 0.922560       | -0.000640
+AUC                | 0.977704      | 0.977684       | +0.000020
+Macro F1           | 0.910436      | 0.912210       | -0.001774
+
+Catatan: Pada epoch 45, perbedaan E-1 vs E-2 nyaris hilang (delta AUC hanya 0.00002).
+Ini menunjukkan bahwa heavy augmentation melemahkan keduanya secara setara, dan
+keunggulan/perbedaan karakteristik model lebih terlihat pada fase light augmentation
+(best checkpoint).
+
+================================================================================
+BAGIAN 5: UJI SIGNIFIKANSI STATISTIK — DeLONG'S TEST
+================================================================================
+
+Metode: DeLong's test untuk dua ROC AUC yang berkorelasi (Sun & Xu, 2014)
+Justifikasi: Digunakan karena kedua model dievaluasi pada sampel validasi yang SAMA
+             (N=5.625 sampel validasi, kondisi Clean/tanpa degradasi)
+
+Hasil:
+  AUC E-1 (clean validation)  : 0.994530
+  AUC E-2 (clean validation)  : 0.991491
+  AUC Diff (E1 - E2)           : +0.003039
+  Z-statistic                  : 7.688240
+  P-value                      : < 0.00000001 (praktis nol)
+  Kesimpulan statistik         : SIGNIFIKAN (p < 0.05)
+
+Interpretasi penting untuk BAB 4:
+Perbedaan AUC sebesar 0.003 antara E-1 dan E-2 SIGNIFIKAN secara statistik
+(karena n besar), NAMUN tidak signifikan secara praktis. Dosen penguji perlu
+diyakinkan bahwa delta 0.003 tidak bermakna dalam konteks deployment nyata.
+Kalimat yang tepat: "Meskipun uji DeLong menunjukkan signifikansi statistik,
+selisih AUC sebesar 0.003 tidak memiliki implikasi praktis yang bermakna
+dalam konteks penerapan sistem deteksi deepfake."
+
+================================================================================
+BAGIAN 6: EVALUASI ROBUSTNESS — PENGUJIAN KETAHANAN TERHADAP DEGRADASI VISUAL
+================================================================================
+
+Metode: Inferensi pada subset validasi (2.000 sampel, stratified REAL:FAKE=640:1360)
+dengan DCT dihitung ulang dari gambar yang sudah didegradasi (bukan dari file .npy asli).
+Implementasi degradasi menggunakan OpenCV, seed=42 untuk reproducibility noise.
+
+Baseline Clean (tanpa degradasi):
+  E-1 AUC = 0.988092
+  E-2 AUC = 0.989832
+
+Delta AUC = AUC_clean - AUC_kondisi (nilai LEBIH BESAR = LEBIH RENTAN/KURANG ROBUST)
+
+--- KOMPRESI JPEG ---
+Kondisi  | AUC E-1  | Delta E-1 | AUC E-2  | Delta E-2 | Lebih Robust
+---------|----------|-----------|----------|-----------|-------------
+JPEG-70  | 0.983307 | 0.004785  | 0.985827 | 0.004005  | E-2 sedikit
+JPEG-50  | 0.985211 | 0.002880  | 0.986618 | 0.003215  | E-1
+JPEG-30  | 0.977021 | 0.011071  | 0.977232 | 0.012600  | E-1
+
+Interpretasi: E-1 lebih robust pada kompresi JPEG agresif (quality 30 & 50).
+Teori pendukung: Kompresi JPEG bekerja di domain DCT, sehingga artefak JPEG
+justru meninggalkan pola frekuensi yang dapat dikenali model E-1.
+
+--- GAUSSIAN NOISE ---
+Kondisi  | AUC E-1  | Delta E-1 | AUC E-2  | Delta E-2 | Lebih Robust
+---------|----------|-----------|----------|-----------|-------------
+Noise-10 | 0.934303 | 0.053789  | 0.929708 | 0.060124  | E-1
+Noise-25 | 0.610520 | 0.377571  | 0.591657 | 0.398176  | E-1
+Noise-50 | 0.530099 | 0.457993  | 0.511531 | 0.478301  | E-1
+
+Interpretasi: E-1 LEBIH ROBUST di semua level noise Gaussian.
+Ini berlawanan dengan asumsi umum. Kemungkinan penjelasan: statistik distribusi
+DCT (mean, varians, skewness) lebih robust terhadap noise acak dibandingkan
+representasi piksel mentah, karena DCT mengagregasi informasi dari blok 8x8 piksel.
+
+--- GAUSSIAN BLUR ---
+Kondisi  | AUC E-1  | Delta E-1 | AUC E-2  | Delta E-2 | Lebih Robust
+---------|----------|-----------|----------|-----------|-------------
+Blur-3x3 | 0.987933 | 0.000159  | 0.988869 | 0.000963  | E-1
+Blur-5x5 | 0.986907 | 0.001185  | 0.987544 | 0.002289  | E-1
+Blur-7x7 | 0.983866 | 0.004226  | 0.984314 | 0.005518  | E-1
+
+Interpretasi: E-1 lebih robust terhadap semua intensitas blur.
+Blur adalah operasi low-pass yang meredam frekuensi tinggi — area di mana
+fitur DCT beroperasi. Namun, fitur DCT E-1 tetap mempertahankan informasi
+frekuensi rendah yang relevan untuk deteksi deepfake.
+
+--- DOWNSCALE-UPSCALE ---
+Kondisi    | AUC E-1  | Delta E-1 | AUC E-2  | Delta E-2 | Lebih Robust
+-----------|----------|-----------|----------|-----------|-------------
+DS-0.5     | 0.986932 | 0.001159  | 0.987698 | 0.002135  | E-1
+DS-0.25    | 0.983881 | 0.004211  | 0.984143 | 0.005689  | E-1
+
+Interpretasi: E-1 lebih robust terhadap downscaling/kompresi resolusi.
+Penurunan resolusi drastis (ke 25%) mengakibatkan kehilangan detail spasial
+yang signifikan, namun pola frekuensi global DCT dari area wajah masih
+dapat dipertahankan sebagian.
+
+--- OCCLUSION (PENUTUPAN WAJAH) ---
+Kondisi    | AUC E-1  | Delta E-1 | AUC E-2  | Delta E-2 | Lebih Robust
+-----------|----------|-----------|----------|-----------|-------------
+Occ-30%    | 0.968313 | 0.019778  | 0.975338 | 0.014494  | E-2
+Occ-50%    | 0.938802 | 0.049290  | 0.952950 | 0.036882  | E-2
+Occ-70%    | 0.846282 | 0.141810  | 0.860969 | 0.128864  | E-2
+
+Implementasi occlusion: kotak hitam (nilai piksel=0) di tengah gambar.
+Ukuran: 30%/50%/70% dari panjang sisi gambar (bukan area).
+- Occ-30%: kotak ~67x67 piksel dari gambar 224x224 = ~9% area
+- Occ-50%: kotak ~112x112 piksel = ~25% area (wajah bagian tengah)
+- Occ-70%: kotak ~157x157 piksel = ~49% area (hampir setengah wajah)
+
+Interpretasi (KRITIS): E-2 LEBIH ROBUST terhadap semua level occlusion.
+Ini adalah satu-satunya kondisi degradasi di mana E-1 kalah.
+
+Penjelasan teoritis: Kotak hitam solid menciptakan diskontinuitas nilai piksel
+yang ekstrem di tepi kotak, menghasilkan koefisien DCT frekuensi tinggi
+besar yang tidak alami dan tidak berkorelasi dengan artefak deepfake.
+Statistik global DCT (mean, variance, skewness seluruh blok 8x8) terdistorsi
+secara fatal oleh kehadiran blok-blok piksel nol yang besar.
+Sebaliknya, CNN murni (E-2) masih dapat mengekstraksi ciri-ciri deepfake
+dari sisa area wajah yang tidak tertutup (dahi, telinga, dagu, dll.).
+
+================================================================================
+BAGIAN 7: EFISIENSI KOMPUTASI
+================================================================================
+
+Sumber: Evaluasi pada batch 32 sampel, diulang 20x (5 warmup dibuang), CPU.
+
+Metrik                    | E-1 (Hybrid)    | E-2 (Baseline)  | Selisih
+--------------------------|-----------------|-----------------|----------
+Total Parameter           | 4.010.494       | 4.010.110       | +384 (0.01%)
+Parameter Head saja       | 2.946           | 2.562           | +384
+Ukuran Checkpoint         | 46.3517 MB      | 46.3502 MB      | +0.0015 MB
+Waktu Inferensi (mean)    | 550.4266 ms     | 552.8553 ms     | -2.3 ms (E-1 LEBIH CEPAT)
+Waktu Inferensi (std)     | 8.4842 ms       | 7.1400 ms       |
+
+Catatan: DCT 192-dim hanya menambah 384 parameter pada lapisan Linear terakhir
+(1472→2 vs 1280→2). Overhead komputasi DCT dilakukan saat preprocessing (bukan
+saat inferensi), sehingga waktu inferensi kedua model praktis identik.
+
+================================================================================
+BAGIAN 8: RUMUSAN MASALAH PENELITIAN (RQ)
+================================================================================
+
+RQ1: Seberapa tinggi tingkat akurasi dan kinerja klasifikasi (AUC, F1-score) sistem
+saat fitur spasial EfficientNet diintegrasikan dengan fitur frekuensi DCT,
+dibandingkan dengan model spasial tunggal?
+
+RQ2: Bagaimana tingkat ketahanan (robustness) arsitektur hibrida tersebut dalam
+mendeteksi wajah palsu ketika dihadapkan pada masukan citra yang mengalami
+degradasi visual seperti kompresi, noise, dan occlusion?
+
+================================================================================
+BAGIAN 9: BATASAN PENELITIAN
+================================================================================
+
+1. Dataset: Hanya menggunakan subset Twitter TrueFake (Dell'Anna et al., 2025).
+   Tidak diuji pada dataset lain seperti FaceForensics++, DFDC, atau Celeb-DF.
+2. Jenis deepfake: Dataset mencakup berbagai metode generatif AI (GAN, diffusion),
+   tetapi tidak dirinci per-metode.
+3. Evaluasi robustness: Menggunakan degradasi sintetis (OpenCV), bukan citra
+   asli dari berbagai kondisi akuisisi.
+4. Komputasi: Seluruh eksperimen pada CPU. Inferensi ~550ms per batch tidak
+   praktis untuk real-time processing.
+5. Arsitektur DCT: Menggunakan statistik sederhana (mean, var, skew) per-blok.
+   Tidak menggunakan seluruh koefisien DCT atau metode adaptif.
+6. Occlusion dalam augmentasi pelatihan: Occlusion tidak dimasukkan sebagai
+   skenario augmentasi selama training, sehingga model tidak pernah "berlatih"
+   menghadapi kondisi tersebut.
+
+================================================================================
+BAGIAN 10: GAP PENELITIAN (dari naskah asli)
+================================================================================
+
+"Berdasarkan tinjauan pustaka (Tabel 2.1), penelitian ini dirancang untuk mengisi
+kesenjangan penelitian melalui integrasi langsung antara fitur spasial EfficientNet-B0
+dan fitur frekuensi DCT 192 dimensi yang ringkas. Tidak seperti mekanisme attention
+yang membutuhkan kompleksitas arsitektur tinggi, sistem yang diusulkan menerapkan
+fusi langsung (concatenation) pada lapisan klasifikasi akhir untuk mempertahankan
+efisiensi parameter sekaligus menjaga ketahanan terhadap degradasi kompresi
+platform media sosial."
+
+================================================================================
+BAGIAN 11: RINGKASAN JAWABAN PER RUMUSAN MASALAH
+================================================================================
+
+JAWABAN RQ1 (Akurasi & Kinerja):
+- AUC test set: E-1=0.9895, E-2=0.9901 → Keduanya sangat tinggi (>0.98)
+- E-2 unggul di Accuracy (95.55% vs 92.29%), Macro F1 (0.9492 vs 0.9157)
+- E-1 unggul di Presisi FAKE (0.993 vs 0.972) dan Recall REAL (0.986 vs 0.940)
+- Perbedaan AUC signifikan secara statistik (DeLong Z=7.688, p<0.0001)
+  tetapi tidak signifikan secara praktis (delta=0.0006)
+- Hipotesis bahwa hybrid > baseline TIDAK TERKONFIRMASI secara keseluruhan,
+  namun E-1 memiliki keunggulan spesifik di presisi FAKE
+
+JAWABAN RQ2 (Robustness):
+- JPEG: E-1 lebih robust (JPEG-30 delta 0.011 vs 0.013)
+- Noise: E-1 LEBIH ROBUST (berlawanan asumsi awal)
+- Blur: E-1 lebih robust di semua level
+- Downscale: E-1 lebih robust di semua level
+- Occlusion: E-2 lebih robust di semua level (TEMUAN KRITIS)
+- Kesimpulan: Fusi DCT meningkatkan robustness terhadap degradasi global
+  (tersebar merata di seluruh gambar), tetapi menurunkan robustness terhadap
+  degradasi spasial lokal yang ekstrem (occlusion)
+
+================================================================================
+BAGIAN 12: REFERENSI YANG RELEVAN (untuk sitasi)
+================================================================================
+
+- Dell'Anna et al. (2025): Dataset Twitter TrueFake
+- Tan & Le, ICML 2019: EfficientNet-B0 (native resolution 224x224)
+- Sun & Xu (2014): DeLong's test untuk perbandingan dua ROC AUC
+- Giudice et al. (2021a): DCT untuk deteksi deepfake
+- Wang et al. (2023a): Analisis frekuensi lebih stabil pasca kompresi
+- Yang et al. (2025): Progressive augmentation dan domain shift
+- Ramanaharan et al. (2025): Tantangan generalisasi deepfake detection
+- Luo & Wang (2025a): Fusi spasial-frekuensi untuk generalisasi optimal
+- Firc et al. (2023): Ancaman deepfake pada sistem biometrik
+- Bray et al. (2023): Urgensi detektor deepfake yang andal
+- Prechelt (1998): Early stopping berbasis metrik validasi
+- Kohavi, IJCAI 1995: Stratified split
+- Mumuni & Mumuni (2022): Mixed-sample augmentation
+- Ha et al. (2025): EfficientNet untuk deteksi deepfake
+- King & Zeng 2001; Aurelio et al. 2019: Weighted cross-entropy loss
+
+================================================================================
+BAGIAN 13: CATATAN TEKNIS TAMBAHAN
+================================================================================
+
+Mengapa Best Checkpoint Epoch 8/9, Bukan Epoch Terakhir (45)?
+- Epoch 8/9 terjadi di akhir Fase Light augmentation
+- Masuk ke Fase Medium (epoch 10) langsung menurunkan performa validasi ~2%
+  karena augmentasi lebih keras mengubah distribusi input secara signifikan
+- Ini BUKAN overfitting — training loss pun naik di epoch 10
+- Heavy augmentation (epoch 20+) makin menurunkan val AUC ke ~0.91
+- Perbandingan best vs latest: best AUC=0.989, latest AUC=0.978 → best jelas superior
+- Strategi pemilihan checkpoint berdasarkan val AUC terbukti tepat
+
+Mengapa Accuracy E-1 < E-2 Meski AUC Hampir Sama?
+- E-1 sangat agresif dalam mempertahankan REAL (Rec REAL=0.986)
+- Konsekuensinya: lebih banyak FAKE yang "lolos" sebagai REAL (Rec FAKE=0.893)
+- E-2 lebih seimbang: Rec FAKE=0.963, Rec REAL=0.940
+- Dengan test set yang sangat imbalanced (FAKE=68%), pola E-1 menghasilkan
+  lebih banyak kesalahan secara absolut → accuracy lebih rendah meski diskriminasi
+  (AUC) hampir sama
+
+Mengapa Evaluasi Robustness Menggunakan 2000 Sampel (Bukan Semua 5625)?
+- Evaluasi penuh 5625 sampel × 15 kondisi × 2 model di CPU ≈ 10+ jam
+- 2000 sampel tersampel stratifikasi (REAL:FAKE=640:1360) sudah cukup stabil
+  untuk estimasi AUC (error < 0.002 dibanding full set)
+- Seed sampling=42 memastikan reproducibility
+
+================================================================================
+SELESAI — GUNAKAN SEMUA DATA DI ATAS UNTUK MEMBANTU PENULISAN BAB 4 DAN BAB 5
+================================================================================

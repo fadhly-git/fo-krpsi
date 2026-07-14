@@ -1,6 +1,7 @@
 """Entry point training pipeline deepfake detector berbasis image + DCT."""
 
 import datetime
+import json
 import gc
 import os
 import sys
@@ -20,6 +21,7 @@ from config import (
 	DATA_ROOT,
 	DCT_ROOT,
 	LOG_DIR,
+	PROJECT_ROOT,
 	apply_cpu_safety_overrides,
 	apply_runtime_overrides,
 	resolve_device,
@@ -169,28 +171,49 @@ def main():
 	scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=CFG["epochs"], eta_min=1e-7)
 	criterion = nn.CrossEntropyLoss(weight=class_weights.to(device))
 
-	val_ratio = float(CFG.get("val_ratio", 0.2))
-	val_ratio = min(max(val_ratio, 0.01), 0.9)
-	val_size = max(1, int(round(n_total * val_ratio)))
-	val_size = min(val_size, n_total - 1)
-
-	# Ref: Kohavi, IJCAI 1995 (stratified split)
+	# Ref: Kohavi, IJCAI 1995 (stratified split); 3-way: train / val / test
+	# Test set is held out for final reporting only (Rumusan Masalah: integritas evaluasi)
 	indices = np.arange(n_total)
-	train_indices, val_indices = train_test_split(
+	test_ratio = float(CFG.get("test_ratio", 0.1))
+	test_size = max(1, int(round(n_total * test_ratio)))
+
+	train_val_indices, test_indices_arr = train_test_split(
 		indices,
-		test_size=val_size,
+		test_size=test_size,
 		random_state=CFG["seed"],
 		stratify=labels_all,
 		shuffle=True,
 	)
+	train_val_labels = [labels_all[i] for i in train_val_indices]
+	val_ratio = float(CFG.get("val_ratio", 0.2))
+	val_ratio = min(max(val_ratio, 0.01), 0.9)
+	val_size = max(1, int(round(len(train_val_indices) * val_ratio)))
+	val_size = min(val_size, len(train_val_indices) - 1)
+
+	train_indices, val_indices = train_test_split(
+		train_val_indices,
+		test_size=val_size,
+		random_state=CFG["seed"],
+		stratify=train_val_labels,
+		shuffle=True,
+	)
 	train_indices = train_indices.tolist()
 	val_indices = val_indices.tolist()
+	test_indices_list = test_indices_arr.tolist()
 
-	log(f"Split sizes — train: {len(train_indices)}  val: {len(val_indices)}")
+	# Persist test indices so evaluate_robustness.py can reproduce the same split
+	test_indices_path = PROJECT_ROOT / "data/processed/test_indices.json"
+	test_indices_path.parent.mkdir(parents=True, exist_ok=True)
+	with open(test_indices_path, "w", encoding="utf-8") as _f:
+		json.dump(test_indices_list, _f)
+
+	log(f"Split sizes — train: {len(train_indices)}  val: {len(val_indices)}  test: {len(test_indices_list)}")
 	train_labels = [full_dataset.samples[idx][2] for idx in train_indices]
 	val_labels = [full_dataset.samples[idx][2] for idx in val_indices]
+	test_labels = [full_dataset.samples[idx][2] for idx in test_indices_list]
 	log(f"Stratified dist train — REAL={train_labels.count(0)}, FAKE={train_labels.count(1)}")
 	log(f"Stratified dist val   — REAL={val_labels.count(0)}, FAKE={val_labels.count(1)}")
+	log(f"Stratified dist test  — REAL={test_labels.count(0)}, FAKE={test_labels.count(1)}")
 
 	train_subset = Subset(full_dataset, train_indices)
 	val_subset = Subset(full_dataset, val_indices)
@@ -237,6 +260,7 @@ def main():
 
 	best_acc = 0.0
 	best_auc = -1.0
+	best_macro_f1 = float("nan")
 	phase_best_auc = -1.0
 	epochs_no_improve = 0
 	start_epoch = 1
@@ -362,7 +386,22 @@ def main():
 			elif new_aug_phase != current_aug_phase:
 				epochs_no_improve = 0
 				phase_best_auc = -1.0
-				log(f"AUG PHASE changed {current_aug_phase} -> {new_aug_phase}; early-stopping counter reset")
+				# Reset LR and recreate scheduler so the new phase starts with a meaningful LR.
+				# Without this, LR is near eta_min at heavy phase start, causing the observed
+				# accuracy collapse (ep.20: 95% -> 81%).
+				lr_back_reset = CFG.get("lr_phase_reset_backbone", CFG["lr_backbone"] * 0.5)
+				lr_head_reset = CFG.get("lr_phase_reset_head", CFG["lr_head"] * 0.4)
+				optimizer.param_groups[0]["lr"] = lr_back_reset
+				optimizer.param_groups[1]["lr"] = lr_head_reset
+				remaining_epochs = max(CFG["epochs"] - epoch + 1, 1)
+				scheduler = optim.lr_scheduler.CosineAnnealingLR(
+					optimizer, T_max=remaining_epochs, eta_min=1e-7
+				)
+				log(
+					f"AUG PHASE changed {current_aug_phase} -> {new_aug_phase}; "
+					f"early-stopping counter reset; "
+					f"LR reset: backbone={lr_back_reset:.2e}, head={lr_head_reset:.2e}"
+				)
 				current_aug_phase = new_aug_phase
 
 			gc.collect()
@@ -414,9 +453,10 @@ def main():
 					lam = float(np.random.beta(0.4, 0.4))
 					idx = torch.randperm(imgs.size(0)).to(device)
 					imgs_mix = lam * imgs + (1.0 - lam) * imgs[idx]
-					dcts_mix = lam * dcts + (1.0 - lam) * dcts[idx]
+					# DCT statistics (block-level energy/std) are not linearly interpolable
+					# like pixels; mixing them adds gradient noise. Use primary sample's DCT.
 					labels_a, labels_b = labels, labels[idx]
-					logits = head(combine_features(backbone(imgs_mix), dcts_mix))
+					logits = head(combine_features(backbone(imgs_mix), dcts))
 					loss = lam * criterion(logits, labels_a) + (1.0 - lam) * criterion(logits, labels_b)
 				elif use_cutmix:
 					lam = float(np.random.beta(0.4, 0.4))
@@ -429,10 +469,10 @@ def main():
 					x1, x2 = np.clip(cx - cut_w // 2, 0, width), np.clip(cx + cut_w // 2, 0, width)
 					imgs_cut = imgs.clone()
 					imgs_cut[:, :, y1:y2, x1:x2] = imgs[idx, :, y1:y2, x1:x2]
-					dcts_cut = lam * dcts + (1.0 - lam) * dcts[idx]
 					lam_adj = 1.0 - ((y2 - y1) * (x2 - x1) / (height * width))
+					# DCT: use primary sample only (same rationale as mixup above).
 					labels_a, labels_b = labels, labels[idx]
-					logits = head(combine_features(backbone(imgs_cut), dcts_cut))
+					logits = head(combine_features(backbone(imgs_cut), dcts))
 					loss = lam_adj * criterion(logits, labels_a) + (1.0 - lam_adj) * criterion(logits, labels_b)
 				else:
 					feats = backbone(imgs)
@@ -512,11 +552,13 @@ def main():
 
 			gc.collect()
 
+			# Macro F1 for RQ1/RQ2 reporting (Tujuan 1: AUC + F1-score)
+			macro_f1_val = float(np.mean(f1)) if np.isfinite(np.array(f1, dtype=float)).all() else float("nan")
 			try:
 				log(f"EPOCH {epoch:02d} | Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f} Train AUC: {train_auc:.4f} | Val Acc: {acc:.5f} | Val AUC: {auc:.5f}")
 				log(f"  Train Conf: {train_cm.tolist()} | Val Conf: {cm.tolist()}")
 				log(f"  Val Prec_fake: {prec[0]:.4f} Prec_real: {prec[1]:.4f} | Val Rec_fake: {rec[0]:.4f} Rec_real: {rec[1]:.4f}")
-				log(f"  Val F1_fake: {f1[0]:.4f} F1_real: {f1[1]:.4f}")
+				log(f"  Val F1_fake: {f1[0]:.4f} F1_real: {f1[1]:.4f} Macro F1: {macro_f1_val:.4f}")
 			except Exception:
 				log(f"[EPOCH {epoch}] TRAIN loss={train_loss:.4f} acc={train_acc} val_acc={acc}")
 
@@ -552,6 +594,7 @@ def main():
 			if np.isfinite(auc) and (auc > best_auc):
 				best_acc = acc
 				best_auc = auc
+				best_macro_f1 = macro_f1_val
 				epochs_no_improve = 0
 				ckpt = {
 					"efficientnet_state_dict": backbone.state_dict(),
@@ -561,13 +604,14 @@ def main():
 					"epoch": epoch,
 					"best_acc": best_acc,
 					"best_auc": best_auc,
+					"best_macro_f1": best_macro_f1,
 					"phase_best_auc": phase_best_auc,
 					"epochs_no_improve": epochs_no_improve,
 					"current_aug_phase": current_aug_phase,
 					"dct_dim": dct_dim,
 				}
 				torch.save(ckpt, CHECKPOINT_DIR / best_ckpt_name)
-				log(f"NEW BEST saved: auc={best_auc:.4f} acc={best_acc:.4f} epoch={epoch}")
+				log(f"NEW BEST saved: auc={best_auc:.4f} acc={best_acc:.4f} macro_f1={best_macro_f1:.4f} epoch={epoch}")
 			elif (not np.isfinite(auc)) and (not (CHECKPOINT_DIR / best_ckpt_name).exists()):
 				best_acc = acc if np.isfinite(acc) else best_acc
 				ckpt = {

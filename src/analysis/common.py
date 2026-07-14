@@ -2,8 +2,8 @@
 
 Menyediakan:
 - load_model(): load backbone + head dari checkpoint, return dalam eval mode.
-- get_val_subset(): replikasi exact stratified split dari train.py.
-- REAL_CKPT_DIR: path ke direktori checkpoint aktual ('models fix/checkpoints/').
+- get_val_subset(): replikasi exact 3-way stratified split dari train.py.
+- REAL_CKPT_DIR: path ke direktori checkpoint aktual ('models/checkpoints/').
 - CKPT_E1, CKPT_E2: path ke checkpoint terbaik masing-masing model.
 """
 
@@ -20,23 +20,21 @@ _SRC_DIR = Path(__file__).resolve().parents[1]
 if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
-# Path checkpoint aktual — ada di 'models fix/' bukan 'models/' (spasi dalam nama folder)
+# Path checkpoint aktual — ada di 'models/checkpoints/'
 _PROJECT_ROOT_COMMON = Path(__file__).resolve().parents[2]
-REAL_CKPT_DIR = _PROJECT_ROOT_COMMON / "models fix" / "checkpoints"
-CKPT_E1 = REAL_CKPT_DIR / "best_efficient_dct.pth"
-CKPT_E2 = REAL_CKPT_DIR / "best_efficient_no_dct.pth"
+REAL_CKPT_DIR = _PROJECT_ROOT_COMMON / "models" / "checkpoints"
+CKPT_E1 = REAL_CKPT_DIR / "last_checkpoint.pth"
+CKPT_E2 = REAL_CKPT_DIR / "latest_no_dct.pth"
 
 from config import (
     CFG,
     CHECKPOINT_DIR,
     DATA_ROOT,
-    DATA_ROOT_BEAUTY,
     DCT_ROOT,
-    DCT_ROOT_BEAUTY,
     apply_cpu_safety_overrides,
     resolve_device,
 )
-from dataset import MixedDataset, detect_dct_dim
+from dataset import FaceOnlyDataset, detect_dct_dim
 from model import build_backbone, build_head
 
 
@@ -74,42 +72,61 @@ def load_model(checkpoint_path: Path, dct_dim: int, device: torch.device):
 
 
 def get_val_subset():
-    """Replikasi exact stratified split dari train.py.
+    """Replikasi EXACT 3-way stratified split dari train.py.
+
+    train.py melakukan dua tahap split:
+      1. train_val vs test  — test_size = round(n_total * test_ratio=0.1)
+      2. train   vs val     — test_size = round(len(train_val) * val_ratio=0.2)
+    Keduanya dengan random_state=CFG["seed"]=42 dan stratify=labels.
+
+    Fungsi ini mereplikasi KEDUA tahap tersebut menggunakan FaceOnlyDataset
+    (sumber data tunggal, identik dengan yang dipakai train.py) sehingga
+    val_indices yang dihasilkan PERSIS sama seperti saat training berlangsung.
 
     Returns:
-        List of (img_path_str, dct_path_or_none, label) untuk val_indices saja.
-        dct_path_or_none adalah Path atau None (sesuai MixedDataset.samples).
+        List of (img_path, dct_path_or_none, label) untuk val_indices saja.
     """
-    # Deteksi dct_dim (192) — digunakan hanya untuk membangun sample list
-    dct_dim = detect_dct_dim(DCT_ROOT) or detect_dct_dim(DCT_ROOT_BEAUTY) or 0
+    dct_dim = detect_dct_dim(DCT_ROOT) or 0
 
-    full_dataset = MixedDataset(
+    # Bangun dataset IDENTIK dengan train.py (FaceOnlyDataset, satu sumber data)
+    full_dataset = FaceOnlyDataset(
         DATA_ROOT,
-        DATA_ROOT_BEAUTY,
-        DCT_ROOT,
-        DCT_ROOT_BEAUTY,
-        transform=None,  # transform tidak dipakai untuk membangun samples list
-        max_root1=CFG.get("max_subset_images"),
-        max_root2=CFG.get("max_subset_beauty_images"),
+        dct_root=DCT_ROOT,
+        transform=None,  # transform tidak dipakai untuk membangun sample list
+        max_fake=CFG.get("max_subset_images"),
+        max_real=CFG.get("max_subset_beauty_images"),
         dct_dim=dct_dim,
-        use_dct=True,  # gunakan True agar samples mencakup dct_path
+        use_dct=True,
     )
 
     n_total = len(full_dataset)
     labels_all = [label for (_, _, label) in full_dataset.samples]
-
-    # REPLIKASI PERSIS dari train.py baris 176-191
-    val_ratio = float(CFG.get("val_ratio", 0.2))
-    val_ratio = min(max(val_ratio, 0.01), 0.9)
-    val_size = max(1, int(round(n_total * val_ratio)))
-    val_size = min(val_size, n_total - 1)
-
     indices = np.arange(n_total)
-    _, val_indices = train_test_split(
+
+    # ── Tahap 1: pisahkan test set (identik baris 180-186 train.py) ──────────
+    test_ratio = float(CFG.get("test_ratio", 0.1))
+    test_size = max(1, int(round(n_total * test_ratio)))
+
+    train_val_indices, _ = train_test_split(
         indices,
-        test_size=val_size,
+        test_size=test_size,
         random_state=CFG["seed"],
         stratify=labels_all,
+        shuffle=True,
+    )
+
+    # ── Tahap 2: pisahkan val dari train_val (identik baris 188-199 train.py) ─
+    train_val_labels = [labels_all[i] for i in train_val_indices]
+    val_ratio = float(CFG.get("val_ratio", 0.2))
+    val_ratio = min(max(val_ratio, 0.01), 0.9)
+    val_size = max(1, int(round(len(train_val_indices) * val_ratio)))
+    val_size = min(val_size, len(train_val_indices) - 1)
+
+    _, val_indices = train_test_split(
+        train_val_indices,
+        test_size=val_size,
+        random_state=CFG["seed"],
+        stratify=train_val_labels,
         shuffle=True,
     )
 
@@ -118,4 +135,4 @@ def get_val_subset():
 
 def get_dct_dim():
     """Deteksi dct_dim dari data yang tersedia."""
-    return detect_dct_dim(DCT_ROOT) or detect_dct_dim(DCT_ROOT_BEAUTY) or 192
+    return detect_dct_dim(DCT_ROOT) or 192

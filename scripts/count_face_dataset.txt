@@ -1,0 +1,25 @@
+
+============================================================
+  DATASET FACE COUNT  —  Twitter Deepfake Detection
+============================================================
+
+[FAKE]
+  FLUX.1                    :   1250 gambar
+  StableDiffusion1.5        :   1250 gambar
+  StableDiffusion2          :   1250 gambar
+  StableDiffusion3          :   1250 gambar
+  StableDiffusionXL         :   1250 gambar
+  StyleGAN                  :   5000 gambar
+  StyleGAN2                 :   5000 gambar
+  StyleGAN3                 :   5000 gambar
+  TOTAL FAKE                :  21250 gambar
+
+[REAL]
+  FFHQ                      :  10000 gambar
+  TOTAL REAL                :  10000 gambar
+
+------------------------------------------------------------
+  TOTAL KESELURUHAN         :  31250 gambar
+  Rasio Fake:Real           : 21250:10000
+============================================================
+

@@ -29,6 +29,8 @@ models/checkpoints_smoke/*
 models/checkpoints_smoke_resume/*
 !models/checkpoints_smoke_resume/.gitkeep
 
+TASK_BAB4_analisis_tambahan.md
+KONTEKS_BAB4_BAB5_UNTUK_CHATBOT.txt
 
 models_fix/*
 !models_fix/.gitignore

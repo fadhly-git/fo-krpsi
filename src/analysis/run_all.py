@@ -106,10 +106,10 @@ def main():
     # 2. Jumlah baris CSV Task1 == 24
     csv_path = OUT_DIR / "tabel_4_11_robustness.csv"
     n_rows = len(csv_path.read_text(encoding="utf-8").strip().split("\n")) - 1  # minus header
-    if n_rows == 24:
-        print(f"[V2] ✓ Jumlah baris CSV Task1 = {n_rows} (expected 24)")
+    if n_rows == 30:
+        print(f"[V2] ✓ Jumlah baris CSV Task1 = {n_rows} (expected 30)")
     else:
-        msg = f"[V2] ✗ Jumlah baris CSV Task1 = {n_rows} (expected 24)"
+        msg = f"[V2] ✗ Jumlah baris CSV Task1 = {n_rows} (expected 30)"
         print(msg)
         errors.append(msg)
 

@@ -70,29 +70,39 @@ def main():
     count = count_images(ffhq_dir)
     results["Real"]["FFHQ"] = {"path": str(ffhq_dir), "count": count}
 
-    # ─── PRINT HASIL ─────────────────────────────────────────────────────────
-    print("\n" + "=" * 60)
-    print("  DATASET FACE COUNT  —  Twitter Deepfake Detection")
-    print("=" * 60)
+    # ─── PRINT HASIL & SAVE TO TXT ───────────────────────────────────────────
+    output_lines = []
+
+    def log(text=""):
+        print(text)
+        output_lines.append(text)
+
+    log("\n" + "=" * 60)
+    log("  DATASET FACE COUNT  —  Twitter Deepfake Detection")
+    log("=" * 60)
 
     total_fake = 0
-    print("\n[FAKE]")
+    log("\n[FAKE]")
     for gen, info in sorted(results["Fake"].items()):
-        print(f"  {gen:<25} : {info['count']:>6} gambar")
+        log(f"  {gen:<25} : {info['count']:>6} gambar")
         total_fake += info["count"]
-    print(f"  {'TOTAL FAKE':<25} : {total_fake:>6} gambar")
+    log(f"  {'TOTAL FAKE':<25} : {total_fake:>6} gambar")
 
     total_real = 0
-    print("\n[REAL]")
+    log("\n[REAL]")
     for src, info in sorted(results["Real"].items()):
-        print(f"  {src:<25} : {info['count']:>6} gambar")
+        log(f"  {src:<25} : {info['count']:>6} gambar")
         total_real += info["count"]
-    print(f"  {'TOTAL REAL':<25} : {total_real:>6} gambar")
+    log(f"  {'TOTAL REAL':<25} : {total_real:>6} gambar")
 
-    print("\n" + "-" * 60)
-    print(f"  {'TOTAL KESELURUHAN':<25} : {total_fake + total_real:>6} gambar")
-    print(f"  {'Rasio Fake:Real':<25} : {total_fake}:{total_real}")
-    print("=" * 60 + "\n")
+    log("\n" + "-" * 60)
+    log(f"  {'TOTAL KESELURUHAN':<25} : {total_fake + total_real:>6} gambar")
+    log(f"  {'Rasio Fake:Real':<25} : {total_fake}:{total_real}")
+    log("=" * 60 + "\n")
+
+    output_path = Path(__file__).with_suffix(".txt")
+    output_path.write_text("\n".join(output_lines) + "\n", encoding="utf-8")
+    print(f"Hasil output telah disimpan ke: {output_path}")
 
 
 if __name__ == "__main__":
