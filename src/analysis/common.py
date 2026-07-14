@@ -23,8 +23,8 @@ if str(_SRC_DIR) not in sys.path:
 # Path checkpoint aktual — ada di 'models/checkpoints/'
 _PROJECT_ROOT_COMMON = Path(__file__).resolve().parents[2]
 REAL_CKPT_DIR = _PROJECT_ROOT_COMMON / "models" / "checkpoints"
-CKPT_E1 = REAL_CKPT_DIR / "last_checkpoint.pth"
-CKPT_E2 = REAL_CKPT_DIR / "latest_no_dct.pth"
+CKPT_E1 = REAL_CKPT_DIR / "best_efficient_dct.pth"
+CKPT_E2 = REAL_CKPT_DIR / "best_efficient_no_dct.pth"
 
 from config import (
     CFG,
