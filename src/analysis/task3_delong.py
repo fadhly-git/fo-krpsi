@@ -100,49 +100,61 @@ def delong_roc_test(y_true, prob_e1, prob_e2):
 
 
 # ─── Main ──────────────────────────────────────────────────────────────────────
-def run(probs_e1=None, probs_e2=None, labels=None):
+def run(probs_e1=None, probs_e2=None, probs_e3=None, labels=None):
     """Jalankan Task 3.
 
     Jika probs tidak di-pass, akan di-compute ulang via Task 1.
     """
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    if probs_e1 is None or probs_e2 is None or labels is None:
+    if probs_e1 is None or probs_e2 is None or probs_e3 is None or labels is None:
         print("[Task3] Probs clean tidak tersedia, compute ulang via Task 1...")
         from analysis.task1_robustness import run as run_task1
-        probs_e1, probs_e2, labels, _ = run_task1(return_clean_probs=True)
+        probs_e1, probs_e2, probs_e3, labels, _ = run_task1(return_clean_probs=True)
 
-    result = delong_roc_test(
-        y_true=labels.astype(np.float64),
-        prob_e1=probs_e1.astype(np.float64),
-        prob_e2=probs_e2.astype(np.float64),
-    )
+    labels = labels.astype(np.float64)
+    p_e1 = probs_e1.astype(np.float64)
+    p_e2 = probs_e2.astype(np.float64)
+    p_e3 = probs_e3.astype(np.float64)
+
+    res_1_vs_2 = delong_roc_test(labels, p_e1, p_e2)
+    res_3_vs_1 = delong_roc_test(labels, p_e3, p_e1)
+    res_3_vs_2 = delong_roc_test(labels, p_e3, p_e2)
 
     # Simpan CSV
     csv_path = OUT_DIR / "tabel_4_12_delong_test.csv"
-    header = "auc_e1,auc_e2,auc_diff,z_statistic,p_value"
-    csv_line = (
-        f"{result['auc_e1']:.6f},{result['auc_e2']:.6f},"
-        f"{result['auc_diff']:.6f},{result['z_statistic']:.6f},"
-        f"{result['p_value']:.8f}"
-    )
-    csv_path.write_text(header + "\n" + csv_line + "\n", encoding="utf-8")
+    header = "comparison,auc_model_a,auc_model_b,auc_diff,z_statistic,p_value"
+    
+    lines = [header]
+    for comp, res in [("E-1 vs E-2", res_1_vs_2), ("E-3 vs E-1", res_3_vs_1), ("E-3 vs E-2", res_3_vs_2)]:
+        lines.append(
+            f"{comp},{res['auc_e1']:.6f},{res['auc_e2']:.6f},"
+            f"{res['auc_diff']:.6f},{res['z_statistic']:.6f},"
+            f"{res['p_value']:.8f}"
+        )
+    csv_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"[Task3] CSV disimpan: {csv_path}")
 
     # Print ke terminal
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 80)
     print("TABEL 4.12 — DELONG'S TEST")
-    print("=" * 60)
-    print(f"  AUC E-1        : {result['auc_e1']:.6f}")
-    print(f"  AUC E-2        : {result['auc_e2']:.6f}")
-    print(f"  AUC Diff (E1−E2): {result['auc_diff']:.6f}")
-    print(f"  Z-statistic    : {result['z_statistic']:.6f}")
-    print(f"  P-value        : {result['p_value']:.8f}")
-    sig = "SIGNIFIKAN (p < 0.05)" if result["p_value"] < 0.05 else "Tidak signifikan (p ≥ 0.05)"
-    print(f"  Kesimpulan     : {sig}")
-    print("=" * 60)
+    print("=" * 80)
+    print(f"{'Perbandingan':<15} {'AUC A':<10} {'AUC B':<10} {'Diff(A-B)':<10} {'Z-stat':<10} {'P-value':<12} {'Kesimpulan'}")
+    print("-" * 80)
+    
+    for comp, res in [("E-1 vs E-2", res_1_vs_2), ("E-3 vs E-1", res_3_vs_1), ("E-3 vs E-2", res_3_vs_2)]:
+        sig = "SIGNIFIKAN" if res["p_value"] < 0.05 else "TIDAK SIGNIFIKAN"
+        print(
+            f"{comp:<15} {res['auc_e1']:<10.6f} {res['auc_e2']:<10.6f} "
+            f"{res['auc_diff']:<10.6f} {res['z_statistic']:<10.6f} "
+            f"{res['p_value']:<12.8f} {sig}"
+        )
+    print("=" * 80)
 
-    return result
+    # For compatibility with existing verifications, return the dict of E-1 vs E-2 as default, or return a combined dict
+    # Let's return the E-1 vs E-2 for backward compatibility, and attach E-3 metrics to it
+    res_1_vs_2["auc_e3"] = res_3_vs_1["auc_e1"]  # AUC model A in E-3 vs E-1 is E-3
+    return res_1_vs_2
 
 
 if __name__ == "__main__":

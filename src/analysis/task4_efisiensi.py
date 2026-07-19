@@ -29,7 +29,7 @@ if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
 from config import CFG, resolve_device, apply_cpu_safety_overrides
-from analysis.common import load_model, get_val_subset, get_dct_dim, CKPT_E1, CKPT_E2
+from analysis.common import load_model, get_val_subset, get_dct_dim, CKPT_E1, CKPT_E2, CKPT_E3
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = PROJECT_ROOT / "results" / "bab4_tambahan"
@@ -45,11 +45,14 @@ N_REPEATS = 20
 N_WARMUP = 5
 
 
-def count_parameters(backbone, head):
-    """Hitung total parameter dan parameter head saja."""
+def count_parameters(backbone, head, fusion=None):
+    """Hitung total parameter dan parameter head/fusion saja."""
     total = sum(p.numel() for p in backbone.parameters()) + \
             sum(p.numel() for p in head.parameters())
     head_only = sum(p.numel() for p in head.parameters())
+    if fusion is not None:
+        total += sum(p.numel() for p in fusion.parameters())
+        head_only += sum(p.numel() for p in fusion.parameters())
     return total, head_only
 
 
@@ -80,7 +83,7 @@ def build_batch(val_samples, batch_size, dct_dim, device):
 
 
 @torch.no_grad()
-def measure_inference_time(backbone, head, img_batch, dct_batch, dct_dim,
+def measure_inference_time(backbone, head, fusion, img_batch, dct_batch, dct_dim,
                             n_repeats=N_REPEATS, n_warmup=N_WARMUP):
     """Ukur rata-rata waktu forward pass 1 batch dalam ms.
 
@@ -90,7 +93,10 @@ def measure_inference_time(backbone, head, img_batch, dct_batch, dct_dim,
     for i in range(n_warmup + n_repeats):
         t0 = time.perf_counter()
         feat = backbone(img_batch)
-        if dct_dim > 0:
+        if fusion is not None:
+            combined = fusion(feat, dct_batch)
+            _ = head(combined)
+        elif dct_dim > 0:
             combined = torch.cat([feat, dct_batch], dim=1)
             _ = head(combined)
         else:
@@ -108,11 +114,11 @@ def plot_inference_time(results, out_path):
     means = [r["inference_time_ms_mean"] for r in results]
     stds = [r["inference_time_ms_std"] for r in results]
 
-    fig, ax = plt.subplots(figsize=(5, 4))
+    fig, ax = plt.subplots(figsize=(6, 4))
     x = np.arange(len(models))
-    colors = ["black", "white"]
-    hatches = ["", "///"]
-    edges = ["black", "black"]
+    colors = ["black", "white", "gray"]
+    hatches = ["", "///", "..."]
+    edges = ["black", "black", "black"]
 
     for i, (m, mean, std) in enumerate(zip(models, means, stds)):
         ax.bar(x[i], mean, yerr=std, capsize=4,
@@ -151,36 +157,47 @@ def run():
 
     # Load models
     print("[Task4] Loading E-1...")
-    backbone_e1, head_e1 = load_model(CKPT_E1, dct_dim, device)
+    backbone_e1, head_e1, _ = load_model(CKPT_E1, dct_dim, device)
     print("[Task4] Loading E-2...")
-    backbone_e2, head_e2 = load_model(CKPT_E2, 0, device)
+    backbone_e2, head_e2, _ = load_model(CKPT_E2, 0, device)
+    print("[Task4] Loading E-3...")
+    backbone_e3, head_e3, fusion_e3 = load_model(CKPT_E3, dct_dim, device, cross_attn=True)
 
     # Hitung parameter
     total_e1, head_e1_params = count_parameters(backbone_e1, head_e1)
     total_e2, head_e2_params = count_parameters(backbone_e2, head_e2)
+    total_e3, head_e3_params = count_parameters(backbone_e3, head_e3, fusion_e3)
 
     # Ukuran checkpoint
     size_e1_mb = os.path.getsize(str(CKPT_E1)) / (1024 * 1024)
     size_e2_mb = os.path.getsize(str(CKPT_E2)) / (1024 * 1024)
+    size_e3_mb = os.path.getsize(str(CKPT_E3)) / (1024 * 1024)
 
     # Bangun batch dari val subset
     print("[Task4] Membangun batch untuk timing...")
     val_samples = get_val_subset()
     img_batch_e1, dct_batch_e1 = build_batch(val_samples, BATCH_SIZE, dct_dim, device)
     img_batch_e2, dct_batch_e2 = build_batch(val_samples, BATCH_SIZE, 0, device)
+    img_batch_e3, dct_batch_e3 = build_batch(val_samples, BATCH_SIZE, dct_dim, device)
 
     # Ukur waktu inferensi
     print(f"[Task4] Mengukur waktu inferensi E-1 ({N_WARMUP} warmup + {N_REPEATS} repeats)...")
     mean_e1, std_e1 = measure_inference_time(
-        backbone_e1, head_e1, img_batch_e1, dct_batch_e1, dct_dim
+        backbone_e1, head_e1, None, img_batch_e1, dct_batch_e1, dct_dim
     )
     print(f"[Task4] E-1: {mean_e1:.2f} ± {std_e1:.2f} ms")
 
     print(f"[Task4] Mengukur waktu inferensi E-2 ({N_WARMUP} warmup + {N_REPEATS} repeats)...")
     mean_e2, std_e2 = measure_inference_time(
-        backbone_e2, head_e2, img_batch_e2, dct_batch_e2, 0
+        backbone_e2, head_e2, None, img_batch_e2, dct_batch_e2, 0
     )
     print(f"[Task4] E-2: {mean_e2:.2f} ± {std_e2:.2f} ms")
+
+    print(f"[Task4] Mengukur waktu inferensi E-3 ({N_WARMUP} warmup + {N_REPEATS} repeats)...")
+    mean_e3, std_e3 = measure_inference_time(
+        backbone_e3, head_e3, fusion_e3, img_batch_e3, dct_batch_e3, dct_dim
+    )
+    print(f"[Task4] E-3: {mean_e3:.2f} ± {std_e3:.2f} ms")
 
     results = [
         {
@@ -198,6 +215,14 @@ def run():
             "checkpoint_size_mb": size_e2_mb,
             "inference_time_ms_mean": mean_e2,
             "inference_time_ms_std": std_e2,
+        },
+        {
+            "model": "E-3",
+            "total_parameters": total_e3,
+            "head_parameters": head_e3_params,
+            "checkpoint_size_mb": size_e3_mb,
+            "inference_time_ms_mean": mean_e3,
+            "inference_time_ms_std": std_e3,
         },
     ]
 

@@ -7,6 +7,7 @@ dibandingkan dengan model spasial tunggal?"
 Script ini mengevaluasi:
   - E-1: Model Hibrida (EfficientNet-B0 + DCT 192-dim)   → best_efficient_dct.pth
   - E-2: Model Baseline (EfficientNet-B0 saja)            → best_efficient_no_dct.pth
+  - E-3: Model Cross-Attention                           → best_efficient_crossattn.pth
 
 pada TEST SET yang dipisahkan saat training (test_indices.json, ~3.125 sampel),
 sehingga model tidak pernah melihat data ini selama training maupun pemilihan checkpoint.
@@ -59,10 +60,12 @@ REAL_CKPT_DIR = PROJECT_ROOT / "models" / "checkpoints"
 # Checkpoint default (best = dipilih berdasarkan val AUC tertinggi saat training)
 CKPT_BEST_E1   = REAL_CKPT_DIR / "best_efficient_dct.pth"
 CKPT_BEST_E2   = REAL_CKPT_DIR / "best_efficient_no_dct.pth"
+CKPT_BEST_E3   = REAL_CKPT_DIR / "best_efficient_crossattn.pth"
 
 # Checkpoint latest (epoch terakhir pelatihan)
 CKPT_LATEST_E1 = REAL_CKPT_DIR / "last_checkpoint.pth"
 CKPT_LATEST_E2 = REAL_CKPT_DIR / "latest_no_dct.pth"
+CKPT_LATEST_E3 = REAL_CKPT_DIR / "latest_crossattn.pth"
 
 TEST_INDICES_PATH = PROJECT_ROOT / "data" / "processed" / "test_indices.json"
 
@@ -76,9 +79,14 @@ EVAL_TRANSFORM = A.Compose([
 
 
 # ── Helper: load model ────────────────────────────────────────────────────────
-def load_model(ckpt_path: Path, dct_dim: int, device: torch.device, log):
+def load_model(ckpt_path: Path, dct_dim: int, device: torch.device, log, cross_attn: bool = False):
     backbone, feature_dim = build_backbone()
-    head = build_head(feature_dim, dct_dim)
+    if cross_attn:
+        from model import build_head_cross_attention
+        fusion, head = build_head_cross_attention(feature_dim, dct_dim)
+    else:
+        head = build_head(feature_dim, dct_dim)
+        fusion = None
 
     ckpt = torch.load(str(ckpt_path), map_location=device)
     backbone_sd = ckpt.get("efficientnet_state_dict") or ckpt.get("resnet_state_dict")
@@ -91,6 +99,14 @@ def load_model(ckpt_path: Path, dct_dim: int, device: torch.device, log):
 
     backbone.load_state_dict(backbone_sd)
     head.load_state_dict(head_sd)
+
+    if cross_attn:
+        fusion_sd = ckpt.get("fusion_state_dict")
+        if fusion_sd is None:
+            raise KeyError(f"Checkpoint {ckpt_path.name} tidak memiliki 'fusion_state_dict'")
+        fusion.load_state_dict(fusion_sd)
+        fusion = fusion.to(device).eval()
+
     backbone = backbone.to(device).eval()
     head = head.to(device).eval()
 
@@ -102,7 +118,7 @@ def load_model(ckpt_path: Path, dct_dim: int, device: torch.device, log):
         f"  Loaded {ckpt_path.name} | "
         f"epoch={epoch} | val_auc={val_auc:.4f} | val_acc={val_acc:.4f} | val_macro_f1={val_f1:.4f}"
     )
-    return backbone, head
+    return backbone, head, fusion
 
 
 # ── Helper: DCT dari array (digunakan agar konsisten dengan task1_robustness) ─
@@ -150,7 +166,7 @@ except ImportError:
 
 # ── Inference satu model pada test_samples ────────────────────────────────────
 @torch.no_grad()
-def run_inference(test_samples, backbone, head, device, dct_dim: int, log):
+def run_inference(test_samples, backbone, head, fusion, device, dct_dim: int, log):
     """Forward pass seluruh test set, return (probs_fake, preds, labels)."""
     all_probs, all_preds, all_labels = [], [], []
     n = len(test_samples)
@@ -187,7 +203,10 @@ def run_inference(test_samples, backbone, head, device, dct_dim: int, log):
                 dct_tensor = torch.zeros(1, dct_dim, dtype=torch.float32, device=device)
 
             feat = backbone(img_tensor)
-            logit = head(torch.cat([feat, dct_tensor], dim=1))
+            if fusion is not None:
+                logit = head(fusion(feat, dct_tensor))
+            else:
+                logit = head(torch.cat([feat, dct_tensor], dim=1))
         else:
             feat = backbone(img_tensor)
             logit = head(feat)
@@ -241,6 +260,8 @@ def main() -> int:
                         help="Override path checkpoint E-1 (hybrid). Jika diisi, --use_latest diabaikan untuk E-1.")
     parser.add_argument("--ckpt_e2", type=str, default=None,
                         help="Override path checkpoint E-2 (baseline). Jika diisi, --use_latest diabaikan untuk E-2.")
+    parser.add_argument("--ckpt_e3", type=str, default=None,
+                        help="Override path checkpoint E-3 (cross attention). Jika diisi, --use_latest diabaikan untuk E-3.")
     args = parser.parse_args()
 
     # Resolusi path checkpoint
@@ -257,6 +278,13 @@ def main() -> int:
         ckpt_e2 = CKPT_LATEST_E2
     else:
         ckpt_e2 = CKPT_BEST_E2
+
+    if args.ckpt_e3:
+        ckpt_e3 = Path(args.ckpt_e3)
+    elif args.use_latest:
+        ckpt_e3 = CKPT_LATEST_E3
+    else:
+        ckpt_e3 = CKPT_BEST_E3
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -275,6 +303,7 @@ def main() -> int:
     log(f"Checkpoint mode : {ckpt_mode}")
     log(f"E-1 checkpoint  : {ckpt_e1.name}")
     log(f"E-2 checkpoint  : {ckpt_e2.name}")
+    log(f"E-3 checkpoint  : {ckpt_e3.name}")
     log("=" * 70)
 
     # ── Device ────────────────────────────────────────────────────────────────
@@ -319,7 +348,7 @@ def main() -> int:
     log(f"Test subset: {len(test_samples)} sampel | REAL={n_real} | FAKE={n_fake}")
 
     # ── Cek checkpoint ────────────────────────────────────────────────────────
-    for ckpt_path in [ckpt_e1, ckpt_e2]:
+    for ckpt_path in [ckpt_e1, ckpt_e2, ckpt_e3]:
         if not ckpt_path.exists():
             log(f"ERROR: Checkpoint tidak ditemukan: {ckpt_path}")
             log_file.close()
@@ -329,44 +358,53 @@ def main() -> int:
     log("\n" + "─" * 60)
     log("E-1: Model Hibrida (EfficientNet-B0 + DCT)")
     log("─" * 60)
-    backbone_e1, head_e1 = load_model(ckpt_e1, dct_dim, device, log)
+    backbone_e1, head_e1, _ = load_model(ckpt_e1, dct_dim, device, log)
     log(f"Menjalankan inference pada {len(test_samples)} sampel...")
-    probs_e1, preds_e1, labels = run_inference(test_samples, backbone_e1, head_e1, device, dct_dim, log)
+    probs_e1, preds_e1, labels = run_inference(test_samples, backbone_e1, head_e1, None, device, dct_dim, log)
     m_e1 = compute_metrics(probs_e1, preds_e1, labels)
 
     # ── Load dan evaluasi E-2 (Baseline) ─────────────────────────────────────
     log("\n" + "─" * 60)
     log("E-2: Model Baseline (EfficientNet-B0 saja)")
     log("─" * 60)
-    backbone_e2, head_e2 = load_model(ckpt_e2, 0, device, log)
+    backbone_e2, head_e2, _ = load_model(ckpt_e2, 0, device, log)
     log(f"Menjalankan inference pada {len(test_samples)} sampel...")
-    probs_e2, preds_e2, _ = run_inference(test_samples, backbone_e2, head_e2, device, 0, log)
+    probs_e2, preds_e2, _ = run_inference(test_samples, backbone_e2, head_e2, None, device, 0, log)
     m_e2 = compute_metrics(probs_e2, preds_e2, labels)
 
+    # ── Load dan evaluasi E-3 (Cross-Attention) ──────────────────────────────
+    log("\n" + "─" * 60)
+    log("E-3: Model Cross-Attention")
+    log("─" * 60)
+    backbone_e3, head_e3, fusion_e3 = load_model(ckpt_e3, dct_dim, device, log, cross_attn=True)
+    log(f"Menjalankan inference pada {len(test_samples)} sampel...")
+    probs_e3, preds_e3, _ = run_inference(test_samples, backbone_e3, head_e3, fusion_e3, device, dct_dim, log)
+    m_e3 = compute_metrics(probs_e3, preds_e3, labels)
+
     # ── Print tabel hasil ─────────────────────────────────────────────────────
-    log("\n" + "=" * 70)
-    log("HASIL EVALUASI TEST SET — PERBANDINGAN E-1 vs E-2")
-    log("=" * 70)
-    log(f"{'Metrik':<20} {'E-1 (Hybrid)':<18} {'E-2 (Baseline)':<18} {'Delta (E1-E2)':<15}")
-    log("-" * 70)
+    log("\n" + "=" * 90)
+    log("HASIL EVALUASI TEST SET — PERBANDINGAN E-1, E-2, dan E-3")
+    log("=" * 90)
+    log(f"{'Metrik':<15} | {'E-1 (Hybrid)':<15} | {'E-2 (Baseline)':<15} | {'E-3 (Cross)':<15} | {'Δ(E1-E2)':<10} | {'Δ(E3-E2)':<10}")
+    log("-" * 90)
 
     metrics_rows = [
-        ("Accuracy",    m_e1["acc"],       m_e2["acc"]),
-        ("AUC",         m_e1["auc"],       m_e2["auc"]),
-        ("Macro F1",    m_e1["macro_f1"],  m_e2["macro_f1"]),
-        ("F1 (FAKE)",   m_e1["f1_fake"],   m_e2["f1_fake"]),
-        ("F1 (REAL)",   m_e1["f1_real"],   m_e2["f1_real"]),
-        ("Prec (FAKE)", m_e1["prec_fake"], m_e2["prec_fake"]),
-        ("Rec  (FAKE)", m_e1["rec_fake"],  m_e2["rec_fake"]),
-        ("Prec (REAL)", m_e1["prec_real"], m_e2["prec_real"]),
-        ("Rec  (REAL)", m_e1["rec_real"],  m_e2["rec_real"]),
+        ("Accuracy",    m_e1["acc"],       m_e2["acc"],       m_e3["acc"]),
+        ("AUC",         m_e1["auc"],       m_e2["auc"],       m_e3["auc"]),
+        ("Macro F1",    m_e1["macro_f1"],  m_e2["macro_f1"],  m_e3["macro_f1"]),
+        ("F1 (FAKE)",   m_e1["f1_fake"],   m_e2["f1_fake"],   m_e3["f1_fake"]),
+        ("F1 (REAL)",   m_e1["f1_real"],   m_e2["f1_real"],   m_e3["f1_real"]),
+        ("Prec (FAKE)", m_e1["prec_fake"], m_e2["prec_fake"], m_e3["prec_fake"]),
+        ("Rec  (FAKE)", m_e1["rec_fake"],  m_e2["rec_fake"],  m_e3["rec_fake"]),
+        ("Prec (REAL)", m_e1["prec_real"], m_e2["prec_real"], m_e3["prec_real"]),
+        ("Rec  (REAL)", m_e1["rec_real"],  m_e2["rec_real"],  m_e3["rec_real"]),
     ]
-    for name, v1, v2 in metrics_rows:
-        delta = v1 - v2
-        delta_str = f"{delta:+.4f}"
-        log(f"{name:<20} {v1:<18.4f} {v2:<18.4f} {delta_str:<15}")
+    for name, v1, v2, v3 in metrics_rows:
+        delta12 = v1 - v2
+        delta32 = v3 - v2
+        log(f"{name:<15} | {v1:<15.4f} | {v2:<15.4f} | {v3:<15.4f} | {delta12:+.4f}    | {delta32:+.4f}")
 
-    log("─" * 70)
+    log("─" * 90)
     log(f"Confusion Matrix E-1 (REAL=0, FAKE=1):")
     cm1 = m_e1["cm"]
     log(f"  TN={cm1[0][0]:>5}  FP={cm1[0][1]:>5}")
@@ -375,7 +413,11 @@ def main() -> int:
     cm2 = m_e2["cm"]
     log(f"  TN={cm2[0][0]:>5}  FP={cm2[0][1]:>5}")
     log(f"  FN={cm2[1][0]:>5}  TP={cm2[1][1]:>5}")
-    log("=" * 70)
+    log(f"Confusion Matrix E-3:")
+    cm3 = m_e3["cm"]
+    log(f"  TN={cm3[0][0]:>5}  FP={cm3[0][1]:>5}")
+    log(f"  FN={cm3[1][0]:>5}  TP={cm3[1][1]:>5}")
+    log("=" * 90)
 
     # ── Simpan JSON ───────────────────────────────────────────────────────────
     results = {
@@ -386,6 +428,7 @@ def main() -> int:
         "dct_dim": dct_dim,
         "E1_hybrid": m_e1,
         "E2_baseline": m_e2,
+        "E3_crossattn": m_e3,
     }
     json_path = OUT_DIR / f"test_eval_results_{timestamp}.json"
     with open(json_path, "w", encoding="utf-8") as f:
@@ -408,7 +451,14 @@ def main() -> int:
         f"{m_e2['prec_fake']:.6f},{m_e2['prec_real']:.6f},"
         f"{m_e2['rec_fake']:.6f},{m_e2['rec_real']:.6f}"
     )
-    csv_path.write_text("\n".join([csv_header, e1_row, e2_row]) + "\n", encoding="utf-8")
+    e3_row = (
+        f"E-3 (Cross-Attention),{m_e3['n_samples']},"
+        f"{m_e3['acc']:.6f},{m_e3['auc']:.6f},{m_e3['macro_f1']:.6f},"
+        f"{m_e3['f1_fake']:.6f},{m_e3['f1_real']:.6f},"
+        f"{m_e3['prec_fake']:.6f},{m_e3['prec_real']:.6f},"
+        f"{m_e3['rec_fake']:.6f},{m_e3['rec_real']:.6f}"
+    )
+    csv_path.write_text("\n".join([csv_header, e1_row, e2_row, e3_row]) + "\n", encoding="utf-8")
 
     log(f"\nOutput:")
     log(f"  JSON lengkap : {json_path}")

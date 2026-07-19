@@ -1,0 +1,363 @@
+[2026-07-18 14:00:10] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-07-18 14:00:10] FUSION_MODE: cross_attention
+[2026-07-18 14:00:10] DCT mode: enabled (required for cross-attention fusion)
+[2026-07-18 14:00:10] Checkpoint names: best=best_efficient_crossattn.pth, last=last_checkpoint_crossattn.pth
+[2026-07-18 14:00:10] Detected DCT dim (early) = 192
+[2026-07-18 14:00:10] Building dataset index (no file loads yet)...
+[2026-07-18 14:00:14] [FaceOnlyDataset] Built: real=10000 fake=21250 total=31250 skipped=0 use_dct=True
+[2026-07-18 14:00:14] Total samples (valid) found: 31250
+[2026-07-18 14:00:14] Class counts (valid samples): REAL=10000, FAKE=21250
+[2026-07-18 14:00:14] Using DCT dim = 192
+[2026-07-18 14:00:14] Class weights (CrossEntropy): REAL=1.562500, FAKE=0.735294
+[2026-07-18 14:00:14] Using EfficientNet-B0 pretrained weights
+[2026-07-18 14:00:14] Model E-3 — backbone feature_dim=1280, dct_dim=192, attn_dim=64, n_dct_tokens=3
+[2026-07-18 14:00:14] Parameter count — backbone: 4,007,548, fusion: 190,144, head: 2,562
+[2026-07-18 14:00:14] Parameter count — CrossAttentionFusion+head total: 192,706
+[2026-07-18 14:00:14] Split sizes — train: 22500  val: 5625  test: 3125
+[2026-07-18 14:00:14] Stratified dist train — REAL=7200, FAKE=15300
+[2026-07-18 14:00:14] Stratified dist val   — REAL=1800, FAKE=3825
+[2026-07-18 14:00:14] Stratified dist test  — REAL=1000, FAKE=2125
+[2026-07-18 14:00:15] DATA DEBUG — image batch mean=-0.0807 std=1.1794 min=-2.1179 max=2.6400
+[2026-07-18 14:00:15] DATA DEBUG — dct batch mean(mean)=-0.0000 mean(std)=1.0026
+[2026-07-18 14:00:15] No resume checkpoint found. Starting fresh training.
+[2026-07-18 14:32:47] [EPOCH 1] TRAIN loss=0.4141 acc=0.7898
+[2026-07-18 14:38:06] EPOCH 01 | Loss: 0.4141 | Train Acc: 0.8706 Train AUC: 0.9496 | Val Acc: 0.85831 | Val AUC: 0.93900
+[2026-07-18 14:38:06]   Train Conf: [[995, 61], [353, 1791]] | Val Conf: [[1655, 145], [652, 3173]]
+[2026-07-18 14:38:06]   Val Prec_fake: 0.7174 Prec_real: 0.9563 | Val Rec_fake: 0.9194 Rec_real: 0.8295
+[2026-07-18 14:38:06]   Val F1_fake: 0.8059 F1_real: 0.8884 Macro F1: 0.8472
+[2026-07-18 14:38:06] LAST CHECKPOINT saved at epoch 1
+[2026-07-18 14:38:07] NEW BEST saved: auc=0.9390 acc=0.8583 macro_f1=0.8472 epoch=1
+[2026-07-18 14:38:07] LR updated: backbone=0.00002996, fusion/head=0.00049939
+[2026-07-18 15:10:10] [EPOCH 2] TRAIN loss=0.3136 acc=0.8459
+[2026-07-18 15:16:16] EPOCH 02 | Loss: 0.3136 | Train Acc: 0.9100 Train AUC: 0.9758 | Val Acc: 0.88267 | Val AUC: 0.95588
+[2026-07-18 15:16:16]   Train Conf: [[971, 33], [255, 1941]] | Val Conf: [[1678, 122], [538, 3287]]
+[2026-07-18 15:16:16]   Val Prec_fake: 0.7572 Prec_real: 0.9642 | Val Rec_fake: 0.9322 Rec_real: 0.8593
+[2026-07-18 15:16:16]   Val F1_fake: 0.8357 F1_real: 0.9088 Macro F1: 0.8722
+[2026-07-18 15:16:16] LAST CHECKPOINT saved at epoch 2
+[2026-07-18 15:16:16] NEW BEST saved: auc=0.9559 acc=0.8827 macro_f1=0.8722 epoch=2
+[2026-07-18 15:16:16] LR updated: backbone=0.00002985, fusion/head=0.00049757
+[2026-07-18 15:46:29] [EPOCH 3] TRAIN loss=0.2649 acc=0.8685
+[2026-07-18 15:51:43] EPOCH 03 | Loss: 0.2649 | Train Acc: 0.9387 Train AUC: 0.9887 | Val Acc: 0.90364 | Val AUC: 0.96913
+[2026-07-18 15:51:43]   Train Conf: [[1005, 22], [174, 1999]] | Val Conf: [[1660, 140], [402, 3423]]
+[2026-07-18 15:51:43]   Val Prec_fake: 0.8050 Prec_real: 0.9607 | Val Rec_fake: 0.9222 Rec_real: 0.8949
+[2026-07-18 15:51:43]   Val F1_fake: 0.8597 F1_real: 0.9266 Macro F1: 0.8931
+[2026-07-18 15:51:44] LAST CHECKPOINT saved at epoch 3
+[2026-07-18 15:51:44] NEW BEST saved: auc=0.9691 acc=0.9036 macro_f1=0.8931 epoch=3
+[2026-07-18 15:51:44] LR updated: backbone=0.00002967, fusion/head=0.00049454
+[2026-07-18 16:23:42] [EPOCH 4] TRAIN loss=0.2302 acc=0.8949
+[2026-07-18 16:28:59] EPOCH 04 | Loss: 0.2302 | Train Acc: 0.9575 Train AUC: 0.9929 | Val Acc: 0.91822 | Val AUC: 0.97566
+[2026-07-18 16:28:59]   Train Conf: [[1003, 34], [102, 2061]] | Val Conf: [[1660, 140], [320, 3505]]
+[2026-07-18 16:28:59]   Val Prec_fake: 0.8384 Prec_real: 0.9616 | Val Rec_fake: 0.9222 Rec_real: 0.9163
+[2026-07-18 16:28:59]   Val F1_fake: 0.8783 F1_real: 0.9384 Macro F1: 0.9084
+[2026-07-18 16:28:59] LAST CHECKPOINT saved at epoch 4
+[2026-07-18 16:28:59] NEW BEST saved: auc=0.9757 acc=0.9182 macro_f1=0.9084 epoch=4
+[2026-07-18 16:28:59] LR updated: backbone=0.00002942, fusion/head=0.00049032
+[2026-07-18 16:58:15] [EPOCH 5] TRAIN loss=0.2110 acc=0.9027
+[2026-07-18 17:04:47] EPOCH 05 | Loss: 0.2110 | Train Acc: 0.9616 Train AUC: 0.9952 | Val Acc: 0.91591 | Val AUC: 0.97841
+[2026-07-18 17:04:47]   Train Conf: [[988, 10], [113, 2089]] | Val Conf: [[1714, 86], [387, 3438]]
+[2026-07-18 17:04:47]   Val Prec_fake: 0.8158 Prec_real: 0.9756 | Val Rec_fake: 0.9522 Rec_real: 0.8988
+[2026-07-18 17:04:47]   Val F1_fake: 0.8787 F1_real: 0.9356 Macro F1: 0.9072
+[2026-07-18 17:04:47] LAST CHECKPOINT saved at epoch 5
+[2026-07-18 17:04:47] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch5.json
+[2026-07-18 17:04:47] NEW BEST saved: auc=0.9784 acc=0.9159 macro_f1=0.9072 epoch=5
+[2026-07-18 17:04:48] LR updated: backbone=0.00002910, fusion/head=0.00048493
+[2026-07-18 17:35:55] [EPOCH 6] TRAIN loss=0.1770 acc=0.9262
+[2026-07-18 17:40:59] EPOCH 06 | Loss: 0.1770 | Train Acc: 0.9803 Train AUC: 0.9980 | Val Acc: 0.93173 | Val AUC: 0.98271
+[2026-07-18 17:40:59]   Train Conf: [[1022, 3], [60, 2115]] | Val Conf: [[1684, 116], [268, 3557]]
+[2026-07-18 17:40:59]   Val Prec_fake: 0.8627 Prec_real: 0.9684 | Val Rec_fake: 0.9356 Rec_real: 0.9299
+[2026-07-18 17:40:59]   Val F1_fake: 0.8977 F1_real: 0.9488 Macro F1: 0.9232
+[2026-07-18 17:40:59] LAST CHECKPOINT saved at epoch 6
+[2026-07-18 17:40:59] NEW BEST saved: auc=0.9827 acc=0.9317 macro_f1=0.9232 epoch=6
+[2026-07-18 17:40:59] LR updated: backbone=0.00002871, fusion/head=0.00047839
+[2026-07-18 18:12:18] [EPOCH 7] TRAIN loss=0.1679 acc=0.9292
+[2026-07-18 18:17:53] EPOCH 07 | Loss: 0.1679 | Train Acc: 0.9756 Train AUC: 0.9979 | Val Acc: 0.92640 | Val AUC: 0.98143
+[2026-07-18 18:17:53]   Train Conf: [[975, 56], [22, 2147]] | Val Conf: [[1538, 262], [152, 3673]]
+[2026-07-18 18:17:53]   Val Prec_fake: 0.9101 Prec_real: 0.9334 | Val Rec_fake: 0.8544 Rec_real: 0.9603
+[2026-07-18 18:17:53]   Val F1_fake: 0.8814 F1_real: 0.9466 Macro F1: 0.9140
+[2026-07-18 18:17:53] LAST CHECKPOINT saved at epoch 7
+[2026-07-18 18:17:53] LR updated: backbone=0.00002825, fusion/head=0.00047074
+[2026-07-18 18:47:29] [EPOCH 8] TRAIN loss=0.1438 acc=0.9351
+[2026-07-18 18:52:25] EPOCH 08 | Loss: 0.1438 | Train Acc: 0.9828 Train AUC: 0.9986 | Val Acc: 0.93564 | Val AUC: 0.98330
+[2026-07-18 18:52:25]   Train Conf: [[981, 11], [44, 2164]] | Val Conf: [[1691, 109], [253, 3572]]
+[2026-07-18 18:52:25]   Val Prec_fake: 0.8699 Prec_real: 0.9704 | Val Rec_fake: 0.9394 Rec_real: 0.9339
+[2026-07-18 18:52:25]   Val F1_fake: 0.9033 F1_real: 0.9518 Macro F1: 0.9275
+[2026-07-18 18:52:25] LAST CHECKPOINT saved at epoch 8
+[2026-07-18 18:52:25] NEW BEST saved: auc=0.9833 acc=0.9356 macro_f1=0.9275 epoch=8
+[2026-07-18 18:52:25] LR updated: backbone=0.00002773, fusion/head=0.00046202
+[2026-07-18 19:24:01] [EPOCH 9] TRAIN loss=0.1394 acc=0.9410
+[2026-07-18 19:28:59] EPOCH 09 | Loss: 0.1394 | Train Acc: 0.9894 Train AUC: 0.9996 | Val Acc: 0.94436 | Val AUC: 0.98745
+[2026-07-18 19:28:59]   Train Conf: [[1008, 6], [28, 2158]] | Val Conf: [[1690, 110], [203, 3622]]
+[2026-07-18 19:28:59]   Val Prec_fake: 0.8928 Prec_real: 0.9705 | Val Rec_fake: 0.9389 Rec_real: 0.9469
+[2026-07-18 19:28:59]   Val F1_fake: 0.9152 F1_real: 0.9586 Macro F1: 0.9369
+[2026-07-18 19:28:59] LAST CHECKPOINT saved at epoch 9
+[2026-07-18 19:28:59] NEW BEST saved: auc=0.9874 acc=0.9444 macro_f1=0.9369 epoch=9
+[2026-07-18 19:28:59] LR updated: backbone=0.00002714, fusion/head=0.00045226
+[2026-07-18 19:28:59] ================================================================================
+[2026-07-18 19:28:59] EPOCH 10: Switching to MEDIUM augmentation (smooth transition)
+[2026-07-18 19:28:59] ================================================================================
+[2026-07-18 19:28:59] AUG PHASE changed light -> medium; early-stopping counter reset; LR reset: backbone=1.00e-05, fusion/head=2.00e-04
+[2026-07-18 19:58:28] [EPOCH 10] TRAIN loss=0.3025 acc=0.8470
+[2026-07-18 20:04:58] EPOCH 10 | Loss: 0.3025 | Train Acc: 0.9503 Train AUC: 0.9911 | Val Acc: 0.90116 | Val AUC: 0.96475
+[2026-07-18 20:04:58]   Train Conf: [[959, 86], [73, 2082]] | Val Conf: [[1531, 269], [287, 3538]]
+[2026-07-18 20:04:58]   Val Prec_fake: 0.8421 Prec_real: 0.9293 | Val Rec_fake: 0.8506 Rec_real: 0.9250
+[2026-07-18 20:04:58]   Val F1_fake: 0.8463 F1_real: 0.9271 Macro F1: 0.8867
+[2026-07-18 20:04:59] LAST CHECKPOINT saved at epoch 10
+[2026-07-18 20:04:59] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch10.json
+[2026-07-18 20:04:59] LR updated: backbone=0.00000998, fusion/head=0.00019962
+[2026-07-18 20:36:05] [EPOCH 11] TRAIN loss=0.2827 acc=0.8523
+[2026-07-18 20:41:17] EPOCH 11 | Loss: 0.2827 | Train Acc: 0.9575 Train AUC: 0.9922 | Val Acc: 0.90222 | Val AUC: 0.96646
+[2026-07-18 20:41:17]   Train Conf: [[930, 69], [67, 2134]] | Val Conf: [[1544, 256], [294, 3531]]
+[2026-07-18 20:41:17]   Val Prec_fake: 0.8400 Prec_real: 0.9324 | Val Rec_fake: 0.8578 Rec_real: 0.9231
+[2026-07-18 20:41:17]   Val F1_fake: 0.8488 F1_real: 0.9277 Macro F1: 0.8883
+[2026-07-18 20:41:17] LAST CHECKPOINT saved at epoch 11
+[2026-07-18 20:41:17] LR updated: backbone=0.00000992, fusion/head=0.00019848
+[2026-07-18 21:12:51] [EPOCH 12] TRAIN loss=0.2894 acc=0.8457
+[2026-07-18 21:18:25] EPOCH 12 | Loss: 0.2894 | Train Acc: 0.9487 Train AUC: 0.9909 | Val Acc: 0.90507 | Val AUC: 0.96463
+[2026-07-18 21:18:25]   Train Conf: [[928, 67], [97, 2108]] | Val Conf: [[1558, 242], [292, 3533]]
+[2026-07-18 21:18:25]   Val Prec_fake: 0.8422 Prec_real: 0.9359 | Val Rec_fake: 0.8656 Rec_real: 0.9237
+[2026-07-18 21:18:25]   Val F1_fake: 0.8537 F1_real: 0.9297 Macro F1: 0.8917
+[2026-07-18 21:18:26] LAST CHECKPOINT saved at epoch 12
+[2026-07-18 21:18:26] LR updated: backbone=0.00000983, fusion/head=0.00019659
+[2026-07-18 21:48:29] [EPOCH 13] TRAIN loss=0.2802 acc=0.8553
+[2026-07-18 21:53:37] EPOCH 13 | Loss: 0.2802 | Train Acc: 0.9594 Train AUC: 0.9923 | Val Acc: 0.91413 | Val AUC: 0.96886
+[2026-07-18 21:53:37]   Train Conf: [[968, 43], [87, 2102]] | Val Conf: [[1602, 198], [285, 3540]]
+[2026-07-18 21:53:37]   Val Prec_fake: 0.8490 Prec_real: 0.9470 | Val Rec_fake: 0.8900 Rec_real: 0.9255
+[2026-07-18 21:53:37]   Val F1_fake: 0.8690 F1_real: 0.9361 Macro F1: 0.9026
+[2026-07-18 21:53:37] LAST CHECKPOINT saved at epoch 13
+[2026-07-18 21:53:37] LR updated: backbone=0.00000970, fusion/head=0.00019397
+[2026-07-18 22:26:01] [EPOCH 14] TRAIN loss=0.2684 acc=0.8572
+[2026-07-18 22:31:07] EPOCH 14 | Loss: 0.2684 | Train Acc: 0.9622 Train AUC: 0.9934 | Val Acc: 0.91396 | Val AUC: 0.97001
+[2026-07-18 22:31:07]   Train Conf: [[1008, 51], [70, 2071]] | Val Conf: [[1605, 195], [289, 3536]]
+[2026-07-18 22:31:07]   Val Prec_fake: 0.8474 Prec_real: 0.9477 | Val Rec_fake: 0.8917 Rec_real: 0.9244
+[2026-07-18 22:31:07]   Val F1_fake: 0.8690 F1_real: 0.9359 Macro F1: 0.9025
+[2026-07-18 22:31:08] LAST CHECKPOINT saved at epoch 14
+[2026-07-18 22:31:08] LR updated: backbone=0.00000954, fusion/head=0.00019064
+[2026-07-18 23:00:29] [EPOCH 15] TRAIN loss=0.2590 acc=0.8601
+[2026-07-18 23:05:19] EPOCH 15 | Loss: 0.2590 | Train Acc: 0.9647 Train AUC: 0.9942 | Val Acc: 0.90649 | Val AUC: 0.96763
+[2026-07-18 23:05:19]   Train Conf: [[994, 23], [90, 2093]] | Val Conf: [[1617, 183], [343, 3482]]
+[2026-07-18 23:05:19]   Val Prec_fake: 0.8250 Prec_real: 0.9501 | Val Rec_fake: 0.8983 Rec_real: 0.9103
+[2026-07-18 23:05:19]   Val F1_fake: 0.8601 F1_real: 0.9298 Macro F1: 0.8949
+[2026-07-18 23:05:19] LAST CHECKPOINT saved at epoch 15
+[2026-07-18 23:05:19] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch15.json
+[2026-07-18 23:05:19] LR updated: backbone=0.00000934, fusion/head=0.00018661
+[2026-07-18 23:34:01] [EPOCH 16] TRAIN loss=0.2458 acc=0.8683
+[2026-07-18 23:38:24] EPOCH 16 | Loss: 0.2458 | Train Acc: 0.9697 Train AUC: 0.9949 | Val Acc: 0.90791 | Val AUC: 0.96887
+[2026-07-18 23:38:24]   Train Conf: [[982, 40], [57, 2121]] | Val Conf: [[1560, 240], [278, 3547]]
+[2026-07-18 23:38:24]   Val Prec_fake: 0.8487 Prec_real: 0.9366 | Val Rec_fake: 0.8667 Rec_real: 0.9273
+[2026-07-18 23:38:24]   Val F1_fake: 0.8576 F1_real: 0.9319 Macro F1: 0.8948
+[2026-07-18 23:38:24] LAST CHECKPOINT saved at epoch 16
+[2026-07-18 23:38:24] LR updated: backbone=0.00000910, fusion/head=0.00018192
+[2026-07-19 00:05:49] [EPOCH 17] TRAIN loss=0.2427 acc=0.8726
+[2026-07-19 00:10:14] EPOCH 17 | Loss: 0.2427 | Train Acc: 0.9666 Train AUC: 0.9966 | Val Acc: 0.91982 | Val AUC: 0.97485
+[2026-07-19 00:10:14]   Train Conf: [[1040, 19], [88, 2053]] | Val Conf: [[1664, 136], [315, 3510]]
+[2026-07-19 00:10:14]   Val Prec_fake: 0.8408 Prec_real: 0.9627 | Val Rec_fake: 0.9244 Rec_real: 0.9176
+[2026-07-19 00:10:14]   Val F1_fake: 0.8807 F1_real: 0.9396 Macro F1: 0.9101
+[2026-07-19 00:10:14] LAST CHECKPOINT saved at epoch 17
+[2026-07-19 00:10:15] LR updated: backbone=0.00000884, fusion/head=0.00017662
+[2026-07-19 00:37:09] [EPOCH 18] TRAIN loss=0.2263 acc=0.8752
+[2026-07-19 00:41:17] EPOCH 18 | Loss: 0.2263 | Train Acc: 0.9725 Train AUC: 0.9954 | Val Acc: 0.91431 | Val AUC: 0.96894
+[2026-07-19 00:41:17]   Train Conf: [[969, 47], [41, 2143]] | Val Conf: [[1554, 246], [236, 3589]]
+[2026-07-19 00:41:17]   Val Prec_fake: 0.8682 Prec_real: 0.9359 | Val Rec_fake: 0.8633 Rec_real: 0.9383
+[2026-07-19 00:41:17]   Val F1_fake: 0.8657 F1_real: 0.9371 Macro F1: 0.9014
+[2026-07-19 00:41:17] LAST CHECKPOINT saved at epoch 18
+[2026-07-19 00:41:17] LR updated: backbone=0.00000855, fusion/head=0.00017073
+[2026-07-19 01:08:00] [EPOCH 19] TRAIN loss=0.2293 acc=0.8768
+[2026-07-19 01:12:08] EPOCH 19 | Loss: 0.2293 | Train Acc: 0.9672 Train AUC: 0.9952 | Val Acc: 0.91520 | Val AUC: 0.97273
+[2026-07-19 01:12:08]   Train Conf: [[975, 47], [58, 2120]] | Val Conf: [[1598, 202], [275, 3550]]
+[2026-07-19 01:12:08]   Val Prec_fake: 0.8532 Prec_real: 0.9462 | Val Rec_fake: 0.8878 Rec_real: 0.9281
+[2026-07-19 01:12:08]   Val F1_fake: 0.8701 F1_real: 0.9370 Macro F1: 0.9036
+[2026-07-19 01:12:08] LAST CHECKPOINT saved at epoch 19
+[2026-07-19 01:12:08] LR updated: backbone=0.00000823, fusion/head=0.00016430
+[2026-07-19 01:12:08] ================================================================================
+[2026-07-19 01:12:08] EPOCH 20: Switching to HEAVY augmentation (strong regularization)
+[2026-07-19 01:12:08] ================================================================================
+[2026-07-19 01:12:08] AUG PHASE changed medium -> heavy; early-stopping counter reset; LR reset: backbone=1.00e-05, fusion/head=2.00e-04
+[2026-07-19 01:39:24] [EPOCH 20] TRAIN loss=0.5559 acc=0.6828
+[2026-07-19 01:43:43] EPOCH 20 | Loss: 0.5559 | Train Acc: 0.8106 Train AUC: 0.8894 | Val Acc: 0.79538 | Val AUC: 0.86670
+[2026-07-19 01:43:43]   Train Conf: [[730, 291], [315, 1864]] | Val Conf: [[1261, 539], [612, 3213]]
+[2026-07-19 01:43:43]   Val Prec_fake: 0.6733 Prec_real: 0.8563 | Val Rec_fake: 0.7006 Rec_real: 0.8400
+[2026-07-19 01:43:43]   Val F1_fake: 0.6866 F1_real: 0.8481 Macro F1: 0.7674
+[2026-07-19 01:43:43] LAST CHECKPOINT saved at epoch 20
+[2026-07-19 01:43:43] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch20.json
+[2026-07-19 01:43:43] LR updated: backbone=0.00000996, fusion/head=0.00019927
+[2026-07-19 02:11:00] [EPOCH 21] TRAIN loss=0.5217 acc=0.7072
+[2026-07-19 02:15:20] EPOCH 21 | Loss: 0.5217 | Train Acc: 0.8222 Train AUC: 0.8967 | Val Acc: 0.80640 | Val AUC: 0.87987
+[2026-07-19 02:15:20]   Train Conf: [[732, 287], [282, 1899]] | Val Conf: [[1302, 498], [591, 3234]]
+[2026-07-19 02:15:20]   Val Prec_fake: 0.6878 Prec_real: 0.8666 | Val Rec_fake: 0.7233 Rec_real: 0.8455
+[2026-07-19 02:15:20]   Val F1_fake: 0.7051 F1_real: 0.8559 Macro F1: 0.7805
+[2026-07-19 02:15:21] LAST CHECKPOINT saved at epoch 21
+[2026-07-19 02:15:21] LR updated: backbone=0.00000986, fusion/head=0.00019710
+[2026-07-19 02:42:36] [EPOCH 22] TRAIN loss=0.5023 acc=0.7138
+[2026-07-19 02:46:56] EPOCH 22 | Loss: 0.5023 | Train Acc: 0.8228 Train AUC: 0.8990 | Val Acc: 0.80427 | Val AUC: 0.88568
+[2026-07-19 02:46:56]   Train Conf: [[799, 230], [337, 1834]] | Val Conf: [[1365, 435], [666, 3159]]
+[2026-07-19 02:46:56]   Val Prec_fake: 0.6721 Prec_real: 0.8790 | Val Rec_fake: 0.7583 Rec_real: 0.8259
+[2026-07-19 02:46:56]   Val F1_fake: 0.7126 F1_real: 0.8516 Macro F1: 0.7821
+[2026-07-19 02:46:56] LAST CHECKPOINT saved at epoch 22
+[2026-07-19 02:46:56] LR updated: backbone=0.00000968, fusion/head=0.00019350
+[2026-07-19 03:14:08] [EPOCH 23] TRAIN loss=0.4883 acc=0.7344
+[2026-07-19 03:18:27] EPOCH 23 | Loss: 0.4883 | Train Acc: 0.8419 Train AUC: 0.9169 | Val Acc: 0.81102 | Val AUC: 0.89084
+[2026-07-19 03:18:27]   Train Conf: [[813, 206], [300, 1881]] | Val Conf: [[1353, 447], [616, 3209]]
+[2026-07-19 03:18:27]   Val Prec_fake: 0.6872 Prec_real: 0.8777 | Val Rec_fake: 0.7517 Rec_real: 0.8390
+[2026-07-19 03:18:27]   Val F1_fake: 0.7180 F1_real: 0.8579 Macro F1: 0.7879
+[2026-07-19 03:18:27] LAST CHECKPOINT saved at epoch 23
+[2026-07-19 03:18:27] LR updated: backbone=0.00000943, fusion/head=0.00018855
+[2026-07-19 03:45:40] [EPOCH 24] TRAIN loss=0.4848 acc=0.7369
+[2026-07-19 03:49:58] EPOCH 24 | Loss: 0.4848 | Train Acc: 0.8344 Train AUC: 0.9123 | Val Acc: 0.82400 | Val AUC: 0.89586
+[2026-07-19 03:49:58]   Train Conf: [[773, 265], [265, 1897]] | Val Conf: [[1367, 433], [557, 3268]]
+[2026-07-19 03:49:58]   Val Prec_fake: 0.7105 Prec_real: 0.8830 | Val Rec_fake: 0.7594 Rec_real: 0.8544
+[2026-07-19 03:49:58]   Val F1_fake: 0.7342 F1_real: 0.8685 Macro F1: 0.8013
+[2026-07-19 03:49:58] LAST CHECKPOINT saved at epoch 24
+[2026-07-19 03:49:58] LR updated: backbone=0.00000912, fusion/head=0.00018231
+[2026-07-19 04:17:12] [EPOCH 25] TRAIN loss=0.4754 acc=0.7352
+[2026-07-19 04:21:30] EPOCH 25 | Loss: 0.4754 | Train Acc: 0.8556 Train AUC: 0.9266 | Val Acc: 0.82578 | Val AUC: 0.90069
+[2026-07-19 04:21:30]   Train Conf: [[748, 222], [240, 1990]] | Val Conf: [[1327, 473], [507, 3318]]
+[2026-07-19 04:21:30]   Val Prec_fake: 0.7236 Prec_real: 0.8752 | Val Rec_fake: 0.7372 Rec_real: 0.8675
+[2026-07-19 04:21:30]   Val F1_fake: 0.7303 F1_real: 0.8713 Macro F1: 0.8008
+[2026-07-19 04:21:30] LAST CHECKPOINT saved at epoch 25
+[2026-07-19 04:21:30] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch25.json
+[2026-07-19 04:21:30] LR updated: backbone=0.00000876, fusion/head=0.00017486
+[2026-07-19 04:48:43] [EPOCH 26] TRAIN loss=0.4743 acc=0.7372
+[2026-07-19 04:53:01] EPOCH 26 | Loss: 0.4743 | Train Acc: 0.8472 Train AUC: 0.9245 | Val Acc: 0.82898 | Val AUC: 0.90687
+[2026-07-19 04:53:01]   Train Conf: [[817, 210], [279, 1894]] | Val Conf: [[1437, 363], [599, 3226]]
+[2026-07-19 04:53:01]   Val Prec_fake: 0.7058 Prec_real: 0.8989 | Val Rec_fake: 0.7983 Rec_real: 0.8434
+[2026-07-19 04:53:01]   Val F1_fake: 0.7492 F1_real: 0.8702 Macro F1: 0.8097
+[2026-07-19 04:53:01] LAST CHECKPOINT saved at epoch 26
+[2026-07-19 04:53:01] LR updated: backbone=0.00000833, fusion/head=0.00016633
+[2026-07-19 05:20:13] [EPOCH 27] TRAIN loss=0.4638 acc=0.7442
+[2026-07-19 05:24:33] EPOCH 27 | Loss: 0.4638 | Train Acc: 0.8394 Train AUC: 0.9206 | Val Acc: 0.82151 | Val AUC: 0.90224
+[2026-07-19 05:24:33]   Train Conf: [[845, 175], [339, 1841]] | Val Conf: [[1436, 364], [640, 3185]]
+[2026-07-19 05:24:33]   Val Prec_fake: 0.6917 Prec_real: 0.8974 | Val Rec_fake: 0.7978 Rec_real: 0.8327
+[2026-07-19 05:24:33]   Val F1_fake: 0.7410 F1_real: 0.8638 Macro F1: 0.8024
+[2026-07-19 05:24:34] LAST CHECKPOINT saved at epoch 27
+[2026-07-19 05:24:34] LR updated: backbone=0.00000786, fusion/head=0.00015683
+[2026-07-19 05:51:46] [EPOCH 28] TRAIN loss=0.4534 acc=0.7499
+[2026-07-19 05:56:05] EPOCH 28 | Loss: 0.4534 | Train Acc: 0.8575 Train AUC: 0.9321 | Val Acc: 0.83182 | Val AUC: 0.90808
+[2026-07-19 05:56:05]   Train Conf: [[844, 196], [260, 1900]] | Val Conf: [[1436, 364], [582, 3243]]
+[2026-07-19 05:56:05]   Val Prec_fake: 0.7116 Prec_real: 0.8991 | Val Rec_fake: 0.7978 Rec_real: 0.8478
+[2026-07-19 05:56:05]   Val F1_fake: 0.7522 F1_real: 0.8727 Macro F1: 0.8125
+[2026-07-19 05:56:05] LAST CHECKPOINT saved at epoch 28
+[2026-07-19 05:56:05] LR updated: backbone=0.00000735, fusion/head=0.00014650
+[2026-07-19 06:23:17] [EPOCH 29] TRAIN loss=0.4522 acc=0.7364
+[2026-07-19 06:27:36] EPOCH 29 | Loss: 0.4522 | Train Acc: 0.8694 Train AUC: 0.9386 | Val Acc: 0.82418 | Val AUC: 0.90885
+[2026-07-19 06:27:36]   Train Conf: [[888, 129], [289, 1894]] | Val Conf: [[1472, 328], [661, 3164]]
+[2026-07-19 06:27:36]   Val Prec_fake: 0.6901 Prec_real: 0.9061 | Val Rec_fake: 0.8178 Rec_real: 0.8272
+[2026-07-19 06:27:36]   Val F1_fake: 0.7485 F1_real: 0.8648 Macro F1: 0.8067
+[2026-07-19 06:27:36] LAST CHECKPOINT saved at epoch 29
+[2026-07-19 06:27:36] LR updated: backbone=0.00000681, fusion/head=0.00013549
+[2026-07-19 06:54:49] [EPOCH 30] TRAIN loss=0.4539 acc=0.7502
+[2026-07-19 06:59:07] EPOCH 30 | Loss: 0.4539 | Train Acc: 0.8538 Train AUC: 0.9308 | Val Acc: 0.82791 | Val AUC: 0.90884
+[2026-07-19 06:59:07]   Train Conf: [[874, 137], [331, 1858]] | Val Conf: [[1487, 313], [655, 3170]]
+[2026-07-19 06:59:07]   Val Prec_fake: 0.6942 Prec_real: 0.9101 | Val Rec_fake: 0.8261 Rec_real: 0.8288
+[2026-07-19 06:59:07]   Val F1_fake: 0.7544 F1_real: 0.8675 Macro F1: 0.8110
+[2026-07-19 06:59:07] LAST CHECKPOINT saved at epoch 30
+[2026-07-19 06:59:07] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch30.json
+[2026-07-19 06:59:07] LR updated: backbone=0.00000623, fusion/head=0.00012397
+[2026-07-19 07:26:20] [EPOCH 31] TRAIN loss=0.4519 acc=0.7576
+[2026-07-19 07:30:39] EPOCH 31 | Loss: 0.4519 | Train Acc: 0.8634 Train AUC: 0.9371 | Val Acc: 0.83964 | Val AUC: 0.91169
+[2026-07-19 07:30:39]   Train Conf: [[836, 188], [249, 1927]] | Val Conf: [[1425, 375], [527, 3298]]
+[2026-07-19 07:30:39]   Val Prec_fake: 0.7300 Prec_real: 0.8979 | Val Rec_fake: 0.7917 Rec_real: 0.8622
+[2026-07-19 07:30:39]   Val F1_fake: 0.7596 F1_real: 0.8797 Macro F1: 0.8196
+[2026-07-19 07:30:39] LAST CHECKPOINT saved at epoch 31
+[2026-07-19 07:30:39] LR updated: backbone=0.00000565, fusion/head=0.00011210
+[2026-07-19 07:57:50] [EPOCH 32] TRAIN loss=0.4455 acc=0.7494
+[2026-07-19 08:02:07] EPOCH 32 | Loss: 0.4455 | Train Acc: 0.8634 Train AUC: 0.9365 | Val Acc: 0.84000 | Val AUC: 0.91306
+[2026-07-19 08:02:07]   Train Conf: [[808, 173], [264, 1955]] | Val Conf: [[1404, 396], [504, 3321]]
+[2026-07-19 08:02:07]   Val Prec_fake: 0.7358 Prec_real: 0.8935 | Val Rec_fake: 0.7800 Rec_real: 0.8682
+[2026-07-19 08:02:07]   Val F1_fake: 0.7573 F1_real: 0.8807 Macro F1: 0.8190
+[2026-07-19 08:02:07] LAST CHECKPOINT saved at epoch 32
+[2026-07-19 08:02:07] LR updated: backbone=0.00000505, fusion/head=0.00010005
+[2026-07-19 08:29:18] [EPOCH 33] TRAIN loss=0.4464 acc=0.7537
+[2026-07-19 08:33:38] EPOCH 33 | Loss: 0.4464 | Train Acc: 0.8634 Train AUC: 0.9356 | Val Acc: 0.83627 | Val AUC: 0.91383
+[2026-07-19 08:33:38]   Train Conf: [[818, 215], [222, 1945]] | Val Conf: [[1340, 460], [461, 3364]]
+[2026-07-19 08:33:38]   Val Prec_fake: 0.7440 Prec_real: 0.8797 | Val Rec_fake: 0.7444 Rec_real: 0.8795
+[2026-07-19 08:33:38]   Val F1_fake: 0.7442 F1_real: 0.8796 Macro F1: 0.8119
+[2026-07-19 08:33:38] LAST CHECKPOINT saved at epoch 33
+[2026-07-19 08:33:38] LR updated: backbone=0.00000445, fusion/head=0.00008800
+[2026-07-19 09:00:50] [EPOCH 34] TRAIN loss=0.4393 acc=0.7593
+[2026-07-19 09:05:08] EPOCH 34 | Loss: 0.4393 | Train Acc: 0.8669 Train AUC: 0.9401 | Val Acc: 0.84320 | Val AUC: 0.91903
+[2026-07-19 09:05:08]   Train Conf: [[851, 159], [267, 1923]] | Val Conf: [[1466, 334], [548, 3277]]
+[2026-07-19 09:05:08]   Val Prec_fake: 0.7279 Prec_real: 0.9075 | Val Rec_fake: 0.8144 Rec_real: 0.8567
+[2026-07-19 09:05:08]   Val F1_fake: 0.7687 F1_real: 0.8814 Macro F1: 0.8251
+[2026-07-19 09:05:08] LAST CHECKPOINT saved at epoch 34
+[2026-07-19 09:05:08] LR updated: backbone=0.00000387, fusion/head=0.00007613
+[2026-07-19 09:32:19] [EPOCH 35] TRAIN loss=0.4351 acc=0.7567
+[2026-07-19 09:36:39] EPOCH 35 | Loss: 0.4351 | Train Acc: 0.8669 Train AUC: 0.9390 | Val Acc: 0.83662 | Val AUC: 0.91268
+[2026-07-19 09:36:39]   Train Conf: [[837, 166], [260, 1937]] | Val Conf: [[1420, 380], [539, 3286]]
+[2026-07-19 09:36:39]   Val Prec_fake: 0.7249 Prec_real: 0.8963 | Val Rec_fake: 0.7889 Rec_real: 0.8591
+[2026-07-19 09:36:39]   Val F1_fake: 0.7555 F1_real: 0.8773 Macro F1: 0.8164
+[2026-07-19 09:36:39] LAST CHECKPOINT saved at epoch 35
+[2026-07-19 09:36:39] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch35.json
+[2026-07-19 09:36:39] LR updated: backbone=0.00000329, fusion/head=0.00006461
+[2026-07-19 10:03:51] [EPOCH 36] TRAIN loss=0.4439 acc=0.7489
+[2026-07-19 10:08:10] EPOCH 36 | Loss: 0.4439 | Train Acc: 0.8700 Train AUC: 0.9382 | Val Acc: 0.84000 | Val AUC: 0.91521
+[2026-07-19 10:08:10]   Train Conf: [[830, 181], [235, 1954]] | Val Conf: [[1403, 397], [503, 3322]]
+[2026-07-19 10:08:10]   Val Prec_fake: 0.7361 Prec_real: 0.8933 | Val Rec_fake: 0.7794 Rec_real: 0.8685
+[2026-07-19 10:08:10]   Val F1_fake: 0.7572 F1_real: 0.8807 Macro F1: 0.8189
+[2026-07-19 10:08:10] LAST CHECKPOINT saved at epoch 36
+[2026-07-19 10:08:10] LR updated: backbone=0.00000275, fusion/head=0.00005360
+[2026-07-19 10:35:23] [EPOCH 37] TRAIN loss=0.4394 acc=0.7526
+[2026-07-19 10:39:43] EPOCH 37 | Loss: 0.4394 | Train Acc: 0.8603 Train AUC: 0.9386 | Val Acc: 0.84320 | Val AUC: 0.91744
+[2026-07-19 10:39:43]   Train Conf: [[849, 157], [290, 1904]] | Val Conf: [[1467, 333], [549, 3276]]
+[2026-07-19 10:39:43]   Val Prec_fake: 0.7277 Prec_real: 0.9077 | Val Rec_fake: 0.8150 Rec_real: 0.8565
+[2026-07-19 10:39:43]   Val F1_fake: 0.7689 F1_real: 0.8814 Macro F1: 0.8251
+[2026-07-19 10:39:43] LAST CHECKPOINT saved at epoch 37
+[2026-07-19 10:39:43] LR updated: backbone=0.00000224, fusion/head=0.00004327
+[2026-07-19 11:06:57] [EPOCH 38] TRAIN loss=0.4454 acc=0.7601
+[2026-07-19 11:11:17] EPOCH 38 | Loss: 0.4454 | Train Acc: 0.8800 Train AUC: 0.9468 | Val Acc: 0.83982 | Val AUC: 0.91610
+[2026-07-19 11:11:17]   Train Conf: [[832, 210], [174, 1984]] | Val Conf: [[1340, 460], [441, 3384]]
+[2026-07-19 11:11:17]   Val Prec_fake: 0.7524 Prec_real: 0.8803 | Val Rec_fake: 0.7444 Rec_real: 0.8847
+[2026-07-19 11:11:17]   Val F1_fake: 0.7484 F1_real: 0.8825 Macro F1: 0.8155
+[2026-07-19 11:11:17] LAST CHECKPOINT saved at epoch 38
+[2026-07-19 11:11:18] LR updated: backbone=0.00000177, fusion/head=0.00003377
+[2026-07-19 11:38:30] [EPOCH 39] TRAIN loss=0.4335 acc=0.7574
+[2026-07-19 11:42:48] EPOCH 39 | Loss: 0.4335 | Train Acc: 0.8494 Train AUC: 0.9322 | Val Acc: 0.83644 | Val AUC: 0.91383
+[2026-07-19 11:42:48]   Train Conf: [[861, 187], [295, 1857]] | Val Conf: [[1417, 383], [537, 3288]]
+[2026-07-19 11:42:48]   Val Prec_fake: 0.7252 Prec_real: 0.8957 | Val Rec_fake: 0.7872 Rec_real: 0.8596
+[2026-07-19 11:42:48]   Val F1_fake: 0.7549 F1_real: 0.8773 Macro F1: 0.8161
+[2026-07-19 11:42:48] LAST CHECKPOINT saved at epoch 39
+[2026-07-19 11:42:48] LR updated: backbone=0.00000134, fusion/head=0.00002524
+[2026-07-19 12:10:01] [EPOCH 40] TRAIN loss=0.4262 acc=0.7617
+[2026-07-19 12:14:21] EPOCH 40 | Loss: 0.4262 | Train Acc: 0.8666 Train AUC: 0.9394 | Val Acc: 0.83538 | Val AUC: 0.91259
+[2026-07-19 12:14:21]   Train Conf: [[869, 164], [263, 1904]] | Val Conf: [[1430, 370], [556, 3269]]
+[2026-07-19 12:14:21]   Val Prec_fake: 0.7200 Prec_real: 0.8983 | Val Rec_fake: 0.7944 Rec_real: 0.8546
+[2026-07-19 12:14:21]   Val F1_fake: 0.7554 F1_real: 0.8759 Macro F1: 0.8157
+[2026-07-19 12:14:21] LAST CHECKPOINT saved at epoch 40
+[2026-07-19 12:14:21] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch40.json
+[2026-07-19 12:14:21] LR updated: backbone=0.00000098, fusion/head=0.00001779
+[2026-07-19 12:41:34] [EPOCH 41] TRAIN loss=0.4414 acc=0.7569
+[2026-07-19 12:45:53] EPOCH 41 | Loss: 0.4414 | Train Acc: 0.8759 Train AUC: 0.9460 | Val Acc: 0.83236 | Val AUC: 0.91116
+[2026-07-19 12:45:53]   Train Conf: [[888, 148], [249, 1915]] | Val Conf: [[1387, 413], [530, 3295]]
+[2026-07-19 12:45:53]   Val Prec_fake: 0.7235 Prec_real: 0.8886 | Val Rec_fake: 0.7706 Rec_real: 0.8614
+[2026-07-19 12:45:53]   Val F1_fake: 0.7463 F1_real: 0.8748 Macro F1: 0.8106
+[2026-07-19 12:45:53] LAST CHECKPOINT saved at epoch 41
+[2026-07-19 12:45:53] LR updated: backbone=0.00000067, fusion/head=0.00001155
+[2026-07-19 13:13:07] [EPOCH 42] TRAIN loss=0.4272 acc=0.7651
+[2026-07-19 13:17:27] EPOCH 42 | Loss: 0.4272 | Train Acc: 0.8697 Train AUC: 0.9436 | Val Acc: 0.83858 | Val AUC: 0.91808
+[2026-07-19 13:17:27]   Train Conf: [[894, 206], [211, 1889]] | Val Conf: [[1367, 433], [475, 3350]]
+[2026-07-19 13:17:27]   Val Prec_fake: 0.7421 Prec_real: 0.8855 | Val Rec_fake: 0.7594 Rec_real: 0.8758
+[2026-07-19 13:17:27]   Val F1_fake: 0.7507 F1_real: 0.8807 Macro F1: 0.8157
+[2026-07-19 13:17:27] LAST CHECKPOINT saved at epoch 42
+[2026-07-19 13:17:27] LR updated: backbone=0.00000042, fusion/head=0.00000660
+[2026-07-19 13:44:41] [EPOCH 43] TRAIN loss=0.4332 acc=0.7615
+[2026-07-19 13:49:00] EPOCH 43 | Loss: 0.4332 | Train Acc: 0.8700 Train AUC: 0.9441 | Val Acc: 0.83396 | Val AUC: 0.91416
+[2026-07-19 13:49:00]   Train Conf: [[843, 160], [256, 1941]] | Val Conf: [[1429, 371], [563, 3262]]
+[2026-07-19 13:49:00]   Val Prec_fake: 0.7174 Prec_real: 0.8979 | Val Rec_fake: 0.7939 Rec_real: 0.8528
+[2026-07-19 13:49:00]   Val F1_fake: 0.7537 F1_real: 0.8748 Macro F1: 0.8142
+[2026-07-19 13:49:00] LAST CHECKPOINT saved at epoch 43
+[2026-07-19 13:49:00] LR updated: backbone=0.00000024, fusion/head=0.00000300
+[2026-07-19 14:16:14] [EPOCH 44] TRAIN loss=0.4353 acc=0.7601
+[2026-07-19 14:20:34] EPOCH 44 | Loss: 0.4353 | Train Acc: 0.8650 Train AUC: 0.9455 | Val Acc: 0.84196 | Val AUC: 0.92067
+[2026-07-19 14:20:34]   Train Conf: [[901, 133], [299, 1867]] | Val Conf: [[1507, 293], [596, 3229]]
+[2026-07-19 14:20:34]   Val Prec_fake: 0.7166 Prec_real: 0.9168 | Val Rec_fake: 0.8372 Rec_real: 0.8442
+[2026-07-19 14:20:34]   Val F1_fake: 0.7722 F1_real: 0.8790 Macro F1: 0.8256
+[2026-07-19 14:20:34] LAST CHECKPOINT saved at epoch 44
+[2026-07-19 14:20:34] LR updated: backbone=0.00000014, fusion/head=0.00000083
+[2026-07-19 14:47:49] [EPOCH 45] TRAIN loss=0.4287 acc=0.7593
+[2026-07-19 14:52:09] EPOCH 45 | Loss: 0.4287 | Train Acc: 0.8744 Train AUC: 0.9460 | Val Acc: 0.84889 | Val AUC: 0.91831
+[2026-07-19 14:52:09]   Train Conf: [[810, 215], [187, 1988]] | Val Conf: [[1373, 427], [423, 3402]]
+[2026-07-19 14:52:09]   Val Prec_fake: 0.7645 Prec_real: 0.8885 | Val Rec_fake: 0.7628 Rec_real: 0.8894
+[2026-07-19 14:52:09]   Val F1_fake: 0.7636 F1_real: 0.8889 Macro F1: 0.8263
+[2026-07-19 14:52:09] LAST CHECKPOINT saved at epoch 45
+[2026-07-19 14:52:09] Saved parameter debug JSON: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/debug_params_epoch45.json
+[2026-07-19 14:52:09] LR updated: backbone=0.00000010, fusion/head=0.00000010
+[2026-07-19 14:52:09] Training finished. Best auc = 0.9874 Best acc = 0.9444

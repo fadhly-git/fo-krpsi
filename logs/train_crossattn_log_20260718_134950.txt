@@ -1,0 +1,23 @@
+[2026-07-18 13:49:50] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-07-18 13:49:50] FUSION_MODE: cross_attention
+[2026-07-18 13:49:50] DCT mode: enabled (required for cross-attention fusion)
+[2026-07-18 13:49:50] Checkpoint names: best=best_efficient_crossattn.pth, last=last_checkpoint_crossattn.pth
+[2026-07-18 13:49:50] Detected DCT dim (early) = 192
+[2026-07-18 13:49:50] Building dataset index (no file loads yet)...
+[2026-07-18 13:49:54] [FaceOnlyDataset] Built: real=10000 fake=21250 total=31250 skipped=0 use_dct=True
+[2026-07-18 13:49:54] Total samples (valid) found: 31250
+[2026-07-18 13:49:54] Class counts (valid samples): REAL=10000, FAKE=21250
+[2026-07-18 13:49:54] Using DCT dim = 192
+[2026-07-18 13:49:54] Class weights (CrossEntropy): REAL=1.562500, FAKE=0.735294
+[2026-07-18 13:49:54] Using EfficientNet-B0 pretrained weights
+[2026-07-18 13:49:54] Model E-3 — backbone feature_dim=1280, dct_dim=192, attn_dim=64, n_dct_tokens=3
+[2026-07-18 13:49:54] Parameter count — backbone: 4,007,548, fusion: 190,144, head: 2,562
+[2026-07-18 13:49:54] Parameter count — CrossAttentionFusion+head total: 192,706
+[2026-07-18 13:49:54] Split sizes — train: 22500  val: 5625  test: 3125
+[2026-07-18 13:49:54] Stratified dist train — REAL=7200, FAKE=15300
+[2026-07-18 13:49:54] Stratified dist val   — REAL=1800, FAKE=3825
+[2026-07-18 13:49:54] Stratified dist test  — REAL=1000, FAKE=2125
+[2026-07-18 13:49:55] DATA DEBUG — image batch mean=0.0917 std=1.1575 min=-2.1179 max=2.6400
+[2026-07-18 13:49:55] DATA DEBUG — dct batch mean(mean)=0.0000 mean(std)=1.0026
+[2026-07-18 13:49:55] No resume checkpoint found. Starting fresh training.
+[2026-07-18 13:50:29] Training finished. Best auc = -1.0000 Best acc = 0.0000

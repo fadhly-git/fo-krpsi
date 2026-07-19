@@ -32,7 +32,7 @@ if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
 from config import resolve_device, apply_cpu_safety_overrides
-from analysis.common import load_model, get_val_subset, get_dct_dim, CKPT_E1, CKPT_E2
+from analysis.common import load_model, get_val_subset, get_dct_dim, CKPT_E1, CKPT_E2, CKPT_E3
 
 # ─── Konstanta ─────────────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -181,16 +181,18 @@ def run_inference_one_condition(
     val_samples,
     backbone_e1, head_e1,
     backbone_e2, head_e2,
+    backbone_e3, head_e3, fusion_e3,
     device,
     cond_type, param,
 ):
     """Forward pass semua sampel untuk satu kondisi degradasi.
 
     Returns:
-        (probs_e1, probs_e2, labels) — numpy arrays, probs = P(FAKE).
+        (probs_e1, probs_e2, probs_e3, labels) — numpy arrays, probs = P(FAKE).
     """
     probs_e1 = []
     probs_e2 = []
+    probs_e3 = []
     labels = []
 
     for img_path, _dct_path, label in val_samples:
@@ -221,11 +223,18 @@ def run_inference_one_condition(
         logit_e2 = head_e2(feat_e2)
         prob_e2 = F.softmax(logit_e2, dim=1)[0, 1].item()  # P(FAKE)
 
+        # 7. Forward E-3 (cross attention)
+        feat_e3 = backbone_e3(img_tensor)
+        fused_e3 = fusion_e3(feat_e3, dct_tensor)
+        logit_e3 = head_e3(fused_e3)
+        prob_e3 = F.softmax(logit_e3, dim=1)[0, 1].item()  # P(FAKE)
+
         probs_e1.append(prob_e1)
         probs_e2.append(prob_e2)
+        probs_e3.append(prob_e3)
         labels.append(label)
 
-    return np.array(probs_e1), np.array(probs_e2), np.array(labels)
+    return np.array(probs_e1), np.array(probs_e2), np.array(probs_e3), np.array(labels)
 
 
 # ─── Plot bar chart ────────────────────────────────────────────────────────────
@@ -236,23 +245,31 @@ def plot_delta_auc(rows, out_path):
     labels_x = [r["label"] for r in non_clean if r["model"] == "E-1"]
     delta_e1 = [r["delta_auc"] for r in non_clean if r["model"] == "E-1"]
     delta_e2 = [r["delta_auc"] for r in non_clean if r["model"] == "E-2"]
+    delta_e3 = [r["delta_auc"] for r in non_clean if r["model"] == "E-3"]
 
     x = np.arange(len(labels_x))
-    width = 0.35
+    width = 0.25
 
-    fig, ax = plt.subplots(figsize=(12, 5))
+    fig, ax = plt.subplots(figsize=(14, 5))
     bars_e1 = ax.bar(
-        x - width / 2, delta_e1, width,
+        x - width, delta_e1, width,
         label="E-1 (Hibrida)",
         color="black",
         hatch="",
     )
     bars_e2 = ax.bar(
-        x + width / 2, delta_e2, width,
+        x, delta_e2, width,
         label="E-2 (Baseline)",
         color="white",
         edgecolor="black",
         hatch="///",
+    )
+    bars_e3 = ax.bar(
+        x + width, delta_e3, width,
+        label="E-3 (Cross-Attention)",
+        color="gray",
+        edgecolor="black",
+        hatch="...",
     )
 
     ax.axhline(y=0, color="black", linewidth=0.8, linestyle="-")
@@ -293,12 +310,15 @@ def run(return_clean_probs=False):
     # Load checkpoint ukuran (untuk verifikasi tidak berubah)
     ckpt_e1_size_before = os.path.getsize(str(CKPT_E1))
     ckpt_e2_size_before = os.path.getsize(str(CKPT_E2))
+    ckpt_e3_size_before = os.path.getsize(str(CKPT_E3))
 
-    # Load kedua model
+    # Load ketiga model
     print("[Task1] Loading E-1 (best_efficient_dct.pth)...")
-    backbone_e1, head_e1 = load_model(CKPT_E1, dct_dim, device)
+    backbone_e1, head_e1, _ = load_model(CKPT_E1, dct_dim, device)
     print("[Task1] Loading E-2 (best_efficient_no_dct.pth)...")
-    backbone_e2, head_e2 = load_model(CKPT_E2, 0, device)
+    backbone_e2, head_e2, _ = load_model(CKPT_E2, 0, device)
+    print("[Task1] Loading E-3 (best_efficient_crossattn.pth)...")
+    backbone_e3, head_e3, fusion_e3 = load_model(CKPT_E3, dct_dim, device, cross_attn=True)
 
     # Dapatkan val subset
     print("[Task1] Membangun val subset...")
@@ -333,32 +353,39 @@ def run(return_clean_probs=False):
     rows = []
     clean_probs_e1 = None
     clean_probs_e2 = None
+    clean_probs_e3 = None
     clean_labels = None
 
     for cond_type, param, label in CONDITIONS:
         print(f"[Task1] Kondisi: {label} ...", end=" ", flush=True)
-        probs_e1, probs_e2, lbls = run_inference_one_condition(
+        probs_e1, probs_e2, probs_e3, lbls = run_inference_one_condition(
             val_samples,
             backbone_e1, head_e1,
             backbone_e2, head_e2,
+            backbone_e3, head_e3, fusion_e3,
             device,
             cond_type, param,
         )
 
         preds_e1 = (probs_e1 >= 0.5).astype(int)
         preds_e2 = (probs_e2 >= 0.5).astype(int)
+        preds_e3 = (probs_e3 >= 0.5).astype(int)
         acc_e1 = accuracy_score(lbls, preds_e1)
         acc_e2 = accuracy_score(lbls, preds_e2)
+        acc_e3 = accuracy_score(lbls, preds_e3)
         auc_e1 = roc_auc_score(lbls, probs_e1)
         auc_e2 = roc_auc_score(lbls, probs_e2)
-        print(f"AUC E-1={auc_e1:.5f}  AUC E-2={auc_e2:.5f}")
+        auc_e3 = roc_auc_score(lbls, probs_e3)
+        print(f"AUC E-1={auc_e1:.5f}  AUC E-2={auc_e2:.5f}  AUC E-3={auc_e3:.5f}")
 
         if cond_type == "Clean":
             clean_probs_e1 = probs_e1
             clean_probs_e2 = probs_e2
+            clean_probs_e3 = probs_e3
             clean_labels = lbls
             auc_clean_e1 = auc_e1
             auc_clean_e2 = auc_e2
+            auc_clean_e3 = auc_e3
 
         rows.append({
             "kondisi": cond_type if cond_type else "Clean",
@@ -378,13 +405,24 @@ def run(return_clean_probs=False):
             "auc": auc_e2,
             "delta_auc": None,
         })
+        rows.append({
+            "kondisi": cond_type if cond_type else "Clean",
+            "parameter": str(param) if param is not None else "-",
+            "label": label,
+            "model": "E-3",
+            "accuracy": acc_e3,
+            "auc": auc_e3,
+            "delta_auc": None,
+        })
 
     # Hitung delta_auc
     for r in rows:
         if r["model"] == "E-1":
             r["delta_auc"] = round(auc_clean_e1 - r["auc"], 6)
-        else:
+        elif r["model"] == "E-2":
             r["delta_auc"] = round(auc_clean_e2 - r["auc"], 6)
+        else:
+            r["delta_auc"] = round(auc_clean_e3 - r["auc"], 6)
 
     # Simpan CSV
     csv_path = OUT_DIR / "tabel_4_11_robustness.csv"
@@ -418,12 +456,14 @@ def run(return_clean_probs=False):
     # Verifikasi checkpoint tidak berubah
     ckpt_e1_size_after = os.path.getsize(str(CKPT_E1))
     ckpt_e2_size_after = os.path.getsize(str(CKPT_E2))
+    ckpt_e3_size_after = os.path.getsize(str(CKPT_E3))
     assert ckpt_e1_size_before == ckpt_e1_size_after, "CHECKPOINT E-1 BERUBAH!"
     assert ckpt_e2_size_before == ckpt_e2_size_after, "CHECKPOINT E-2 BERUBAH!"
+    assert ckpt_e3_size_before == ckpt_e3_size_after, "CHECKPOINT E-3 BERUBAH!"
     print("[Task1] Verifikasi checkpoint: OK (tidak berubah)")
 
     if return_clean_probs:
-        return clean_probs_e1, clean_probs_e2, clean_labels, rows
+        return clean_probs_e1, clean_probs_e2, clean_probs_e3, clean_labels, rows
 
     return rows
 

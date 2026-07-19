@@ -53,6 +53,11 @@ CFG = {
 	# LR reset values when augmentation phase transitions (avoids LR=0 at heavy phase start)
 	"lr_phase_reset_backbone": 1e-5,
 	"lr_phase_reset_head": 2e-4,
+	# E-3: mode fusi. Nilai valid: "concat" (default, E-1/E-2) | "cross_attention" (E-3)
+	# Dapat di-override via env var FUSION_MODE=cross_attention
+	# Ref: Chen et al. (CrossViT); Qiao et al. (HCMA); Sen & Mukherjee (CSAF);
+	#      Lv et al. (TSCA); Khan et al. (CAMME)
+	"fusion_mode": "concat",
 }
 
 
@@ -97,6 +102,14 @@ def apply_runtime_overrides(log_fn=None):
 		except Exception:
 			if log_fn is not None:
 				log_fn(f"WARN: invalid MAX_SUBSET_BEAUTY='{max_subset_beauty_env}' — ignoring")
+
+	fusion_mode_env = os.environ.get("FUSION_MODE", None)
+	if fusion_mode_env is not None:
+		v = fusion_mode_env.strip().lower()
+		if v in {"concat", "cross_attention"}:
+			CFG["fusion_mode"] = v
+		elif log_fn is not None:
+			log_fn(f"WARN: invalid FUSION_MODE='{fusion_mode_env}' — expected 'concat' atau 'cross_attention'")
 
 
 def apply_cpu_safety_overrides(device):

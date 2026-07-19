@@ -25,6 +25,7 @@ _PROJECT_ROOT_COMMON = Path(__file__).resolve().parents[2]
 REAL_CKPT_DIR = _PROJECT_ROOT_COMMON / "models" / "checkpoints"
 CKPT_E1 = REAL_CKPT_DIR / "best_efficient_dct.pth"
 CKPT_E2 = REAL_CKPT_DIR / "best_efficient_no_dct.pth"
+CKPT_E3 = REAL_CKPT_DIR / "best_efficient_crossattn.pth"
 
 from config import (
     CFG,
@@ -38,19 +39,27 @@ from dataset import FaceOnlyDataset, detect_dct_dim
 from model import build_backbone, build_head
 
 
-def load_model(checkpoint_path: Path, dct_dim: int, device: torch.device):
-    """Load backbone + head dari checkpoint, return (backbone, head) dalam eval mode.
+def load_model(checkpoint_path: Path, dct_dim: int, device: torch.device, cross_attn: bool = False):
+    """Load backbone + head (serta fusion jika cross_attn=True) dari checkpoint.
 
     Args:
         checkpoint_path: Path ke file .pth checkpoint.
-        dct_dim: Dimensi DCT feature (192 untuk E-1, 0 untuk E-2).
+        dct_dim: Dimensi DCT feature (192 untuk E-1/E-3, 0 untuk E-2).
         device: torch.device target.
+        cross_attn: Jika True, build fusion module dan muat state E-3.
 
     Returns:
-        Tuple (backbone, head), keduanya dalam eval mode di device.
+        Tuple (backbone, head, fusion), semuanya dalam eval mode di device.
+        Jika cross_attn=False, fusion bernilai None.
     """
     backbone, feature_dim = build_backbone()
-    head = build_head(feature_dim, dct_dim)
+    
+    if cross_attn:
+        from model import build_head_cross_attention
+        fusion, head = build_head_cross_attention(feature_dim, dct_dim)
+    else:
+        head = build_head(feature_dim, dct_dim)
+        fusion = None
 
     ckpt = torch.load(str(checkpoint_path), map_location=device)
     backbone_state = ckpt.get("efficientnet_state_dict", ckpt.get("resnet_state_dict"))
@@ -64,11 +73,19 @@ def load_model(checkpoint_path: Path, dct_dim: int, device: torch.device):
     backbone.load_state_dict(backbone_state)
     head.load_state_dict(head_state)
 
+    if cross_attn:
+        fusion_state = ckpt.get("fusion_state_dict")
+        if fusion_state is None:
+            raise KeyError(f"Checkpoint {checkpoint_path} tidak memiliki 'fusion_state_dict'")
+        fusion.load_state_dict(fusion_state)
+        fusion = fusion.to(device)
+        fusion.eval()
+
     backbone = backbone.to(device)
     head = head.to(device)
     backbone.eval()
     head.eval()
-    return backbone, head
+    return backbone, head, fusion
 
 
 def get_val_subset():
