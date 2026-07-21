@@ -1,10 +1,17 @@
 """Helper bersama untuk analisis tambahan BAB IV.
 
 Menyediakan:
-- load_model(): load backbone + head dari checkpoint, return dalam eval mode.
-- get_val_subset(): replikasi exact 3-way stratified split dari train.py.
-- REAL_CKPT_DIR: path ke direktori checkpoint aktual ('models/checkpoints/').
-- CKPT_E1, CKPT_E2: path ke checkpoint terbaik masing-masing model.
+- load_model()      : load backbone + head dari checkpoint, return dalam eval mode.
+- get_test_subset() : ambil test samples dari test_indices.json (data held-out SEJATI).
+- get_val_subset()  : replikasi exact 3-way stratified split dari train.py (val set).
+- REAL_CKPT_DIR     : path ke direktori checkpoint aktual ('models/checkpoints/').
+- CKPT_E1, CKPT_E2, CKPT_E3: path ke checkpoint terbaik masing-masing model.
+
+Catatan metodologis:
+  Gunakan get_test_subset() untuk semua evaluasi final (Task 1-3) karena
+  test set adalah data yang benar-benar held-out — tidak pernah dilihat model
+  selama training maupun proses model selection (val AUC).
+  get_val_subset() disediakan untuk keperluan debugging/komparasi saja.
 """
 
 import os
@@ -148,6 +155,47 @@ def get_val_subset():
     )
 
     return [full_dataset.samples[i] for i in val_indices]
+
+
+def get_test_subset():
+    """Kembalikan test samples menggunakan test_indices.json yang dibuat saat training.
+
+    Ini adalah data held-out SEJATI — tidak pernah digunakan selama training
+    maupun model selection (val AUC). Gunakan fungsi ini untuk semua evaluasi
+    final (Task 1-3) agar metodologis konsisten dengan evaluate_test_set.py.
+
+    Returns:
+        List of (img_path, dct_path_or_none, label) untuk test indices saja.
+
+    Raises:
+        FileNotFoundError: jika test_indices.json belum dibuat
+                           (jalankan training terlebih dahulu).
+    """
+    import json
+
+    test_indices_path = _PROJECT_ROOT_COMMON / "data" / "processed" / "test_indices.json"
+    if not test_indices_path.exists():
+        raise FileNotFoundError(
+            f"test_indices.json tidak ditemukan: {test_indices_path}\n"
+            "Pastikan training sudah selesai — train.py menyimpan file ini otomatis."
+        )
+
+    with open(test_indices_path, encoding="utf-8") as f:
+        test_indices = json.load(f)
+
+    dct_dim = detect_dct_dim(DCT_ROOT) or 0
+
+    full_dataset = FaceOnlyDataset(
+        DATA_ROOT,
+        dct_root=DCT_ROOT,
+        transform=None,
+        max_fake=CFG.get("max_subset_images"),
+        max_real=CFG.get("max_subset_beauty_images"),
+        dct_dim=dct_dim,
+        use_dct=True,
+    )
+
+    return [full_dataset.samples[i] for i in test_indices]
 
 
 def get_dct_dim():

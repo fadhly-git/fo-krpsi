@@ -110,6 +110,11 @@ class CrossAttentionFusion(nn.Module):
 		self.attn_dim = attn_dim                   # d = 64
 		self.scale = attn_dim ** -0.5
 
+		# [FIX #3] LayerNorm sebelum proyeksi — normalisasi input ke blok attention.
+		# Kelima paper rujukan pada umumnya menerapkan normalisasi di sekitar attention.
+		self.norm_q = nn.LayerNorm(feature_dim)
+		self.norm_kv = nn.LayerNorm(self.token_dim)
+
 		# Q: proyeksikan fitur spasial → R^d
 		# Ref: Qiao et al. §3.3.2: Q = S'·W_Q
 		self.proj_q = nn.Linear(feature_dim, attn_dim)
@@ -127,6 +132,17 @@ class CrossAttentionFusion(nn.Module):
 		# Ref: CSAF §III-E: output dimensi harus kompatibel dengan spatial_feat
 		self.proj_out = nn.Linear(attn_dim, feature_dim)
 
+		# [FIX #1] Zero-initialize proj_out: di epoch-0, cabang attention = 0 →
+		# model E-3 setara persis E-2 (backbone + head polos), lalu attention
+		# belajar berkontribusi secara bertahap tanpa merusak fitur pretrained.
+		nn.init.zeros_(self.proj_out.weight)
+		nn.init.zeros_(self.proj_out.bias)
+
+		# [FIX #2] Learnable scalar gate α (init=0), sesuai Lv et al. (SFMFNet
+		# TSCA §3.3) yang disebut di docstring: residual learnable α.
+		# Ref: ReZero (Bachlechner et al., 2021) & LayerScale (Touvron et al., 2021)
+		self.alpha = nn.Parameter(torch.zeros(1))
+
 	def forward(self, spatial_feat: torch.Tensor, dct_feat: torch.Tensor) -> torch.Tensor:
 		"""Forward pass cross-attention fusion.
 
@@ -135,21 +151,22 @@ class CrossAttentionFusion(nn.Module):
 			dct_feat:     Tensor [B, dct_dim]       — fitur DCT pre-computed
 
 		Returns:
-			Tensor [B, feature_dim]  — spatial_feat + attention residual
+			Tensor [B, feature_dim]  — spatial_feat + alpha * attention_residual
 		"""
-		# --- Query (dari fitur spasial) ---
-		q = self.proj_q(spatial_feat)  # [B, attn_dim]
-		q = q.unsqueeze(1)             # [B, 1, attn_dim] — 1 query token
+		# --- Query (dari fitur spasial, dengan LayerNorm) ---
+		q = self.proj_q(self.norm_q(spatial_feat))  # [B, attn_dim]
+		q = q.unsqueeze(1)                           # [B, 1, attn_dim] — 1 query token
 
-		# --- Key & Value (dari token DCT) ---
+		# --- Key & Value (dari token DCT, dengan LayerNorm per token) ---
 		# Pecah fitur DCT menjadi n_dct_tokens segmen: [B, token_dim] × n
 		tokens = dct_feat.split(self.token_dim, dim=-1)  # tuple of [B, token_dim]
+		tokens_normed = [self.norm_kv(t) for t in tokens]
 
 		k = torch.stack(
-			[self.proj_k[i](tokens[i]) for i in range(self.n_dct_tokens)], dim=1
+			[self.proj_k[i](tokens_normed[i]) for i in range(self.n_dct_tokens)], dim=1
 		)  # [B, n_dct_tokens, attn_dim]
 		v = torch.stack(
-			[self.proj_v[i](tokens[i]) for i in range(self.n_dct_tokens)], dim=1
+			[self.proj_v[i](tokens_normed[i]) for i in range(self.n_dct_tokens)], dim=1
 		)  # [B, n_dct_tokens, attn_dim]
 
 		# --- Scaled dot-product attention (single-head) ---
@@ -161,10 +178,11 @@ class CrossAttentionFusion(nn.Module):
 		# attn_out: [B, 1, attn_dim] → squeeze → [B, attn_dim]
 		attn_out = torch.matmul(attn_weights, v).squeeze(1)
 
-		# --- Residual connection ke fitur spasial ---
-		# Ref: CSAF: H = CSAF(S,F) + S; Qiao et al. §3.3.2 eq.15
-		out = self.proj_out(attn_out)  # [B, feature_dim]
-		return out + spatial_feat      # residual: [B, feature_dim]
+		# --- Gated residual connection ke fitur spasial ---
+		# Ref: Lv et al. §3.3: residual learnable α (zero-init → identity di awal)
+		# Ref: CSAF §III-E: H = CSAF(S,F) + S; Qiao et al. §3.3.2 eq.15
+		out = self.proj_out(attn_out)            # [B, feature_dim]
+		return spatial_feat + self.alpha * out   # gated residual: [B, feature_dim]
 
 
 def build_head_cross_attention(

@@ -1,0 +1,12 @@
+[2026-07-19 23:07:23] DEVICE: cpu (torch 2.11.0+cu130) FORCE_CPU=True
+[2026-07-19 23:07:23] FUSION_MODE: cross_attention
+[2026-07-19 23:07:23] DCT mode: enabled (required for cross-attention fusion)
+[2026-07-19 23:07:23] Checkpoint names: best=best_efficient_crossattn.pth, last=last_checkpoint_crossattn.pth
+[2026-07-19 23:07:23] Detected DCT dim (early) = 192
+[2026-07-19 23:07:23] Building dataset index (no file loads yet)...
+[2026-07-19 23:07:23] [FaceOnlyDataset] WARN: FFHQ dir not found at /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/data/raw/true-fake/Twitter/Real/FFHQ
+[2026-07-19 23:07:23] [FaceOnlyDataset] Built: real=0 fake=0 total=0 skipped=0 use_dct=True
+[2026-07-19 23:07:23] Total samples (valid) found: 0
+[2026-07-19 23:07:23] ERROR: No valid samples found. Check raw image folders and DCT precompute output.
+[2026-07-19 23:07:23] Checked IMG roots: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/data/raw/true-fake/Twitter
+[2026-07-19 23:07:23] Checked DCT roots: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/data/processed/true-fake/Twitter/dct_features

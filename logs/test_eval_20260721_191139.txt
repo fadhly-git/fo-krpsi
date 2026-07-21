@@ -1,0 +1,20 @@
+[2026-07-21 19:11:39] ======================================================================
+[2026-07-21 19:11:39] EVALUASI FINAL — TEST SET
+[2026-07-21 19:11:39] Checkpoint mode : best
+[2026-07-21 19:11:39] E-1 checkpoint  : best_efficient_dct.pth
+[2026-07-21 19:11:39] E-2 checkpoint  : best_efficient_no_dct.pth
+[2026-07-21 19:11:39] E-3 checkpoint  : best_efficient_crossattn.pth
+[2026-07-21 19:11:39] ======================================================================
+[2026-07-21 19:11:39] Device: cpu | scipy available: True
+[2026-07-21 19:11:39] Test indices dimuat: 3125 sampel dari /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/data/processed/test_indices.json
+[2026-07-21 19:11:39] DCT dim = 192
+[2026-07-21 19:11:39] Membangun dataset index...
+[2026-07-21 19:11:42] [FaceOnlyDataset] Built: real=10000 fake=21250 total=31250 skipped=0 use_dct=True
+[2026-07-21 19:11:42] Test subset: 3125 sampel | REAL=1000 | FAKE=2125
+[2026-07-21 19:11:42] 
+────────────────────────────────────────────────────────────
+[2026-07-21 19:11:42] E-1: Model Hibrida (EfficientNet-B0 + DCT)
+[2026-07-21 19:11:42] ────────────────────────────────────────────────────────────
+[2026-07-21 19:11:42]   Loaded best_efficient_dct.pth | epoch=8 | val_auc=0.9866 | val_acc=0.9460 | val_macro_f1=0.9382
+[2026-07-21 19:11:42] Menjalankan inference pada 3125 sampel...
+[2026-07-21 19:12:06]   Progress: 500/3125

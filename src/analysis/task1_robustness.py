@@ -32,7 +32,7 @@ if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
 from config import resolve_device, apply_cpu_safety_overrides
-from analysis.common import load_model, get_val_subset, get_dct_dim, CKPT_E1, CKPT_E2, CKPT_E3
+from analysis.common import load_model, get_test_subset, get_dct_dim, CKPT_E1, CKPT_E2, CKPT_E3
 
 # ─── Konstanta ─────────────────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -47,7 +47,7 @@ EVAL_TRANSFORM = A.Compose([
 # Batas maksimum sampel untuk robustness eval.
 # Cukup representatif untuk AUC yang stabil, drastis memangkas waktu CPU.
 # Set ke None untuk evaluasi penuh (bisa memakan 10+ jam di CPU).
-MAX_EVAL_SAMPLES = 2000
+MAX_EVAL_SAMPLES = None
 CONDITIONS = [
     ("Clean",      None,   "Clean"),
     ("JPEG",       30,     "JPEG-30"),
@@ -320,10 +320,10 @@ def run(return_clean_probs=False):
     print("[Task1] Loading E-3 (best_efficient_crossattn.pth)...")
     backbone_e3, head_e3, fusion_e3 = load_model(CKPT_E3, dct_dim, device, cross_attn=True)
 
-    # Dapatkan val subset
-    print("[Task1] Membangun val subset...")
-    val_samples = get_val_subset()
-    print(f"[Task1] Val subset (full): {len(val_samples)} sampel")
+    # Dapatkan test subset (data held-out sejati via test_indices.json)
+    print("[Task1] Membangun test subset...")
+    val_samples = get_test_subset()
+    print(f"[Task1] Test subset (full): {len(val_samples)} sampel")
 
     # Batasi jumlah sampel jika MAX_EVAL_SAMPLES diset
     if MAX_EVAL_SAMPLES is not None and len(val_samples) > MAX_EVAL_SAMPLES:

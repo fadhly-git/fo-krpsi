@@ -1,0 +1,4 @@
+model,total_parameters,head_parameters,checkpoint_size_mb,inference_time_ms_mean,inference_time_ms_std
+E-1,4010494,2946,46.3517,535.2108,1.3295
+E-2,4010110,2562,46.3502,536.8487,1.0651
+E-3,4202943,195395,48.5845,537.4539,0.8913

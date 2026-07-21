@@ -1,0 +1,12 @@
+[2026-07-21 10:24:47] ======================================================================
+[2026-07-21 10:24:47] EVALUASI FINAL — TEST SET [LATEST]
+[2026-07-21 10:24:47] E-1 checkpoint  : last_checkpoint.pth
+[2026-07-21 10:24:47] E-2 checkpoint  : latest_no_dct.pth
+[2026-07-21 10:24:47] E-3 checkpoint  : latest_crossattn.pth
+[2026-07-21 10:24:47] ======================================================================
+[2026-07-21 10:24:47] Device: cpu | scipy available: True
+[2026-07-21 10:24:47] Test indices dimuat: 3125 sampel
+[2026-07-21 10:24:47] DCT dim = 192
+[2026-07-21 10:24:50] [FaceOnlyDataset] Built: real=10000 fake=21250 total=31250 skipped=0 use_dct=True
+[2026-07-21 10:24:50] Test subset: 3125 sampel | REAL=1000 | FAKE=2125
+[2026-07-21 10:24:50] ERROR: Checkpoint tidak ditemukan: /home/fadhly/comvis/2kripsi/artifice-vs-nature/final-skripsi/models/checkpoints/latest_crossattn.pth

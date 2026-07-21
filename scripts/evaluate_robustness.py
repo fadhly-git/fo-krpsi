@@ -211,11 +211,12 @@ def main() -> int:
     backbone.load_state_dict(backbone_sd)
     head.load_state_dict(head_sd)
     best_auc_info = ckpt.get("best_auc", float("nan"))
-    best_macro_f1_info = ckpt.get("best_macro_f1", float("nan"))
+    best_macro_f1_info = ckpt.get("best_macro_f1", None)
+    best_macro_f1_str = f"{best_macro_f1_info:.4f}" if best_macro_f1_info is not None and not (isinstance(best_macro_f1_info, float) and best_macro_f1_info != best_macro_f1_info) else "N/A"
     log(
         f"Checkpoint loaded: {ckpt_path.name} | "
         f"epoch={ckpt.get('epoch', '?')} | "
-        f"val_auc={best_auc_info:.4f} | val_macro_f1={best_macro_f1_info:.4f}"
+        f"val_auc={best_auc_info:.4f} | val_macro_f1={best_macro_f1_str}"
     )
 
     # --- Build dataset (transform diganti per skenario) ---

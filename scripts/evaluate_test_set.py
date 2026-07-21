@@ -65,7 +65,7 @@ CKPT_BEST_E3   = REAL_CKPT_DIR / "best_efficient_crossattn.pth"
 # Checkpoint latest (epoch terakhir pelatihan)
 CKPT_LATEST_E1 = REAL_CKPT_DIR / "last_checkpoint.pth"
 CKPT_LATEST_E2 = REAL_CKPT_DIR / "latest_no_dct.pth"
-CKPT_LATEST_E3 = REAL_CKPT_DIR / "latest_crossattn.pth"
+CKPT_LATEST_E3 = REAL_CKPT_DIR / "last_checkpoint_crossattn.pth"
 
 TEST_INDICES_PATH = PROJECT_ROOT / "data" / "processed" / "test_indices.json"
 
@@ -113,10 +113,11 @@ def load_model(ckpt_path: Path, dct_dim: int, device: torch.device, log, cross_a
     epoch = ckpt.get("epoch", "?")
     val_auc = ckpt.get("best_auc", float("nan"))
     val_acc = ckpt.get("best_acc", float("nan"))
-    val_f1  = ckpt.get("best_macro_f1", float("nan"))
+    val_f1  = ckpt.get("best_macro_f1", None)
+    val_f1_str = f"{val_f1:.4f}" if val_f1 is not None and not (isinstance(val_f1, float) and val_f1 != val_f1) else "N/A"
     log(
         f"  Loaded {ckpt_path.name} | "
-        f"epoch={epoch} | val_auc={val_auc:.4f} | val_acc={val_acc:.4f} | val_macro_f1={val_f1:.4f}"
+        f"epoch={epoch} | val_auc={val_auc:.4f} | val_acc={val_acc:.4f} | val_macro_f1={val_f1_str}"
     )
     return backbone, head, fusion
 
@@ -256,6 +257,10 @@ def main() -> int:
     parser.add_argument("--use_latest", action="store_true",
                         help="Gunakan checkpoint epoch terakhir (last_checkpoint / latest_no_dct) "
                              "alih-alih checkpoint terbaik (best_efficient_dct / best_efficient_no_dct)")
+    parser.add_argument("--both", action="store_true",
+                        help="Jalankan evaluasi untuk KEDUA checkpoint (best dan latest) sekaligus. "
+                             "Menghasilkan test_eval_summary.csv (gabungan), "
+                             "test_eval_summary_best.csv, dan test_eval_summary_latest.csv.")
     parser.add_argument("--ckpt_e1", type=str, default=None,
                         help="Override path checkpoint E-1 (hybrid). Jika diisi, --use_latest diabaikan untuk E-1.")
     parser.add_argument("--ckpt_e2", type=str, default=None,
@@ -263,6 +268,10 @@ def main() -> int:
     parser.add_argument("--ckpt_e3", type=str, default=None,
                         help="Override path checkpoint E-3 (cross attention). Jika diisi, --use_latest diabaikan untuk E-3.")
     args = parser.parse_args()
+
+    # Jika --both aktif, jalankan dua kali dan kembalikan status
+    if args.both:
+        return _run_both(args)
 
     # Resolusi path checkpoint
     if args.ckpt_e1:
@@ -435,35 +444,253 @@ def main() -> int:
         json.dump(results, f, indent=2)
 
     # ── Simpan CSV ────────────────────────────────────────────────────────────
-    csv_path = OUT_DIR / "test_eval_summary.csv"
-    csv_header = "model,n_samples,accuracy,auc,macro_f1,f1_fake,f1_real,prec_fake,prec_real,rec_fake,rec_real"
-    e1_row = (
-        f"E-1 (Hybrid),{m_e1['n_samples']},"
-        f"{m_e1['acc']:.6f},{m_e1['auc']:.6f},{m_e1['macro_f1']:.6f},"
-        f"{m_e1['f1_fake']:.6f},{m_e1['f1_real']:.6f},"
-        f"{m_e1['prec_fake']:.6f},{m_e1['prec_real']:.6f},"
-        f"{m_e1['rec_fake']:.6f},{m_e1['rec_real']:.6f}"
-    )
-    e2_row = (
-        f"E-2 (Baseline),{m_e2['n_samples']},"
-        f"{m_e2['acc']:.6f},{m_e2['auc']:.6f},{m_e2['macro_f1']:.6f},"
-        f"{m_e2['f1_fake']:.6f},{m_e2['f1_real']:.6f},"
-        f"{m_e2['prec_fake']:.6f},{m_e2['prec_real']:.6f},"
-        f"{m_e2['rec_fake']:.6f},{m_e2['rec_real']:.6f}"
-    )
-    e3_row = (
-        f"E-3 (Cross-Attention),{m_e3['n_samples']},"
-        f"{m_e3['acc']:.6f},{m_e3['auc']:.6f},{m_e3['macro_f1']:.6f},"
-        f"{m_e3['f1_fake']:.6f},{m_e3['f1_real']:.6f},"
-        f"{m_e3['prec_fake']:.6f},{m_e3['prec_real']:.6f},"
-        f"{m_e3['rec_fake']:.6f},{m_e3['rec_real']:.6f}"
-    )
+    # Kolom tambahan 'checkpoint' membedakan best vs latest jika digabung nanti
+    ckpt_label = "latest" if args.use_latest else "best"
+    csv_header = "checkpoint,model,n_samples,accuracy,auc,macro_f1,f1_fake,f1_real,prec_fake,prec_real,rec_fake,rec_real"
+
+    def _make_row(label, m):
+        return (
+            f"{ckpt_label},{label},{m['n_samples']},"
+            f"{m['acc']:.6f},{m['auc']:.6f},{m['macro_f1']:.6f},"
+            f"{m['f1_fake']:.6f},{m['f1_real']:.6f},"
+            f"{m['prec_fake']:.6f},{m['prec_real']:.6f},"
+            f"{m['rec_fake']:.6f},{m['rec_real']:.6f}"
+        )
+
+    e1_row = _make_row("E-1 (Hybrid)", m_e1)
+    e2_row = _make_row("E-2 (Baseline)", m_e2)
+    e3_row = _make_row("E-3 (Cross-Attention)", m_e3)
+
+    # CSV utama (selalu ditulis; jika --both dipakai, versi gabungan di-handle oleh _run_both)
+    csv_suffix = f"_{ckpt_label}" if getattr(args, "_suffix_csv", False) else ""
+    csv_path = OUT_DIR / f"test_eval_summary{csv_suffix}.csv"
     csv_path.write_text("\n".join([csv_header, e1_row, e2_row, e3_row]) + "\n", encoding="utf-8")
 
     log(f"\nOutput:")
     log(f"  JSON lengkap : {json_path}")
     log(f"  CSV ringkasan: {csv_path}")
     log(f"  Log file     : {log_path}")
+    log_file.close()
+    return 0
+
+
+def _run_both(args) -> int:
+    """Jalankan evaluasi untuk best dan latest checkpoint secara berurutan.
+
+    Menghasilkan:
+      - test_eval_summary_best.csv   — hasil best checkpoint
+      - test_eval_summary_latest.csv — hasil latest checkpoint
+      - test_eval_summary.csv        — gabungan keduanya (6 baris: 3 model x 2 ckpt)
+    """
+    import copy
+    import types
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    all_rows = []
+    header_line = None
+    rc = 0
+
+    for mode in ("best", "latest"):
+        print(f"\n{'='*70}")
+        print(f"  MODE: {mode.upper()} CHECKPOINT")
+        print(f"{'='*70}")
+
+        # Buat args tiruan untuk mode ini
+        mode_args = copy.copy(args)
+        mode_args.both = False
+        mode_args.use_latest = (mode == "latest")
+        mode_args._suffix_csv = True  # sinyal ke main() untuk tulis ke _best / _latest
+
+        # Jalankan main() dengan args tiruan
+        import sys as _sys
+        _orig_argv = _sys.argv
+        _sys.argv = [_sys.argv[0]]  # bersihkan argv agar parse_args tidak re-parse
+        try:
+            ret = _run_single(mode_args)
+        finally:
+            _sys.argv = _orig_argv
+
+        if ret != 0:
+            rc = ret
+
+        # Baca CSV yang baru ditulis dan kumpulkan baris-barisnya
+        csv_file = OUT_DIR / f"test_eval_summary_{mode}.csv"
+        if csv_file.exists():
+            lines = csv_file.read_text(encoding="utf-8").strip().split("\n")
+            if header_line is None:
+                header_line = lines[0]
+            all_rows.extend(lines[1:])  # skip header pada iterasi berikutnya
+
+    # Tulis CSV gabungan
+    if header_line and all_rows:
+        combined_path = OUT_DIR / "test_eval_summary.csv"
+        combined_path.write_text(
+            "\n".join([header_line] + all_rows) + "\n", encoding="utf-8"
+        )
+        print(f"\n[BOTH] CSV gabungan ditulis: {combined_path}")
+        print(f"[BOTH] CSV best            : {OUT_DIR / 'test_eval_summary_best.csv'}")
+        print(f"[BOTH] CSV latest          : {OUT_DIR / 'test_eval_summary_latest.csv'}")
+
+    return rc
+
+
+def _run_single(args) -> int:
+    """Inti evaluasi — sama dengan main() tapi menerima args langsung (tidak parse_args)."""
+    # Resolusi checkpoint
+    if getattr(args, "ckpt_e1", None):
+        ckpt_e1 = Path(args.ckpt_e1)
+    elif args.use_latest:
+        ckpt_e1 = CKPT_LATEST_E1
+    else:
+        ckpt_e1 = CKPT_BEST_E1
+
+    if getattr(args, "ckpt_e2", None):
+        ckpt_e2 = Path(args.ckpt_e2)
+    elif args.use_latest:
+        ckpt_e2 = CKPT_LATEST_E2
+    else:
+        ckpt_e2 = CKPT_BEST_E2
+
+    if getattr(args, "ckpt_e3", None):
+        ckpt_e3 = Path(args.ckpt_e3)
+    elif args.use_latest:
+        ckpt_e3 = CKPT_LATEST_E3
+    else:
+        ckpt_e3 = CKPT_BEST_E3
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    ckpt_mode = "latest" if args.use_latest else "best"
+    log_path = LOG_DIR / f"test_eval_{ckpt_mode}_{timestamp}.txt"
+    log_file = open(log_path, "w", encoding="utf-8")
+
+    def log(msg: str):
+        line = f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
+        print(line)
+        log_file.write(line + "\n")
+        log_file.flush()
+
+    log("=" * 70)
+    log(f"EVALUASI FINAL — TEST SET [{ckpt_mode.upper()}]")
+    log(f"E-1 checkpoint  : {ckpt_e1.name}")
+    log(f"E-2 checkpoint  : {ckpt_e2.name}")
+    log(f"E-3 checkpoint  : {ckpt_e3.name}")
+    log("=" * 70)
+
+    device, force_cpu = resolve_device()
+    apply_cpu_safety_overrides(device)
+    log(f"Device: {device} | scipy available: {_SCIPY_AVAILABLE}")
+
+    if not TEST_INDICES_PATH.exists():
+        log(f"ERROR: {TEST_INDICES_PATH} tidak ditemukan.")
+        log_file.close()
+        return 1
+
+    with open(TEST_INDICES_PATH, encoding="utf-8") as f:
+        test_indices = json.load(f)
+    log(f"Test indices dimuat: {len(test_indices)} sampel")
+
+    dct_dim = detect_dct_dim(DCT_ROOT)
+    if dct_dim is None:
+        log("WARNING: Precomputed DCT tidak ditemukan. Menggunakan dct_dim=192.")
+        dct_dim = 192 if _SCIPY_AVAILABLE else 0
+    log(f"DCT dim = {dct_dim}")
+
+    full_dataset = FaceOnlyDataset(
+        DATA_ROOT, dct_root=DCT_ROOT, transform=EVAL_TRANSFORM,
+        dct_dim=dct_dim, use_dct=True, log_fn=log,
+    )
+    test_samples = [full_dataset.samples[i] for i in test_indices]
+    labels_all = [s[2] for s in test_samples]
+    n_real = labels_all.count(0)
+    n_fake = labels_all.count(1)
+    log(f"Test subset: {len(test_samples)} sampel | REAL={n_real} | FAKE={n_fake}")
+
+    for ckpt_path in [ckpt_e1, ckpt_e2, ckpt_e3]:
+        if not ckpt_path.exists():
+            log(f"ERROR: Checkpoint tidak ditemukan: {ckpt_path}")
+            log_file.close()
+            return 1
+
+    log("\n" + "─" * 60)
+    log("E-1: Model Hibrida (EfficientNet-B0 + DCT)")
+    backbone_e1, head_e1, _ = load_model(ckpt_e1, dct_dim, device, log)
+    probs_e1, preds_e1, labels = run_inference(test_samples, backbone_e1, head_e1, None, device, dct_dim, log)
+    m_e1 = compute_metrics(probs_e1, preds_e1, labels)
+
+    log("\n" + "─" * 60)
+    log("E-2: Model Baseline (EfficientNet-B0 saja)")
+    backbone_e2, head_e2, _ = load_model(ckpt_e2, 0, device, log)
+    probs_e2, preds_e2, _ = run_inference(test_samples, backbone_e2, head_e2, None, device, 0, log)
+    m_e2 = compute_metrics(probs_e2, preds_e2, labels)
+
+    log("\n" + "─" * 60)
+    log("E-3: Model Cross-Attention")
+    backbone_e3, head_e3, fusion_e3 = load_model(ckpt_e3, dct_dim, device, log, cross_attn=True)
+    probs_e3, preds_e3, _ = run_inference(test_samples, backbone_e3, head_e3, fusion_e3, device, dct_dim, log)
+    m_e3 = compute_metrics(probs_e3, preds_e3, labels)
+
+    # Tabel hasil
+    log("\n" + "=" * 90)
+    log(f"HASIL [{ckpt_mode.upper()}] — PERBANDINGAN E-1, E-2, E-3")
+    log("=" * 90)
+    log(f"{'Metrik':<15} | {'E-1 (Hybrid)':<15} | {'E-2 (Baseline)':<15} | {'E-3 (Cross)':<15} | {'Δ(E1-E2)':<10} | {'Δ(E3-E2)':<10}")
+    log("-" * 90)
+    for name, v1, v2, v3 in [
+        ("Accuracy",    m_e1["acc"],       m_e2["acc"],       m_e3["acc"]),
+        ("AUC",         m_e1["auc"],       m_e2["auc"],       m_e3["auc"]),
+        ("Macro F1",    m_e1["macro_f1"],  m_e2["macro_f1"],  m_e3["macro_f1"]),
+        ("F1 (FAKE)",   m_e1["f1_fake"],   m_e2["f1_fake"],   m_e3["f1_fake"]),
+        ("F1 (REAL)",   m_e1["f1_real"],   m_e2["f1_real"],   m_e3["f1_real"]),
+        ("Prec (FAKE)", m_e1["prec_fake"], m_e2["prec_fake"], m_e3["prec_fake"]),
+        ("Rec  (FAKE)", m_e1["rec_fake"],  m_e2["rec_fake"],  m_e3["rec_fake"]),
+        ("Prec (REAL)", m_e1["prec_real"], m_e2["prec_real"], m_e3["prec_real"]),
+        ("Rec  (REAL)", m_e1["rec_real"],  m_e2["rec_real"],  m_e3["rec_real"]),
+    ]:
+        log(f"{name:<15} | {v1:<15.4f} | {v2:<15.4f} | {v3:<15.4f} | {v1-v2:+.4f}    | {v3-v2:+.4f}")
+    log("─" * 90)
+    for tag, m in [("E-1", m_e1), ("E-2", m_e2), ("E-3", m_e3)]:
+        cm = m["cm"]
+        log(f"CM {tag}: TN={cm[0][0]:>5}  FP={cm[0][1]:>5}  FN={cm[1][0]:>5}  TP={cm[1][1]:>5}")
+    log("=" * 90)
+
+    # JSON
+    results = {
+        "timestamp": timestamp, "checkpoint_mode": ckpt_mode,
+        "n_test_samples": len(test_samples), "n_real": n_real, "n_fake": n_fake,
+        "dct_dim": dct_dim,
+        "E1_hybrid": m_e1, "E2_baseline": m_e2, "E3_crossattn": m_e3,
+    }
+    json_path = OUT_DIR / f"test_eval_results_{ckpt_mode}_{timestamp}.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2)
+
+    # CSV (dengan kolom 'checkpoint' untuk identifikasi di CSV gabungan)
+    csv_suffix = f"_{ckpt_mode}" if getattr(args, "_suffix_csv", False) else ""
+    csv_path = OUT_DIR / f"test_eval_summary{csv_suffix}.csv"
+    csv_header = "checkpoint,model,n_samples,accuracy,auc,macro_f1,f1_fake,f1_real,prec_fake,prec_real,rec_fake,rec_real"
+
+    def _row(label, m):
+        return (
+            f"{ckpt_mode},{label},{m['n_samples']},"
+            f"{m['acc']:.6f},{m['auc']:.6f},{m['macro_f1']:.6f},"
+            f"{m['f1_fake']:.6f},{m['f1_real']:.6f},"
+            f"{m['prec_fake']:.6f},{m['prec_real']:.6f},"
+            f"{m['rec_fake']:.6f},{m['rec_real']:.6f}"
+        )
+
+    csv_path.write_text(
+        "\n".join([csv_header,
+                   _row("E-1 (Hybrid)", m_e1),
+                   _row("E-2 (Baseline)", m_e2),
+                   _row("E-3 (Cross-Attention)", m_e3)]) + "\n",
+        encoding="utf-8",
+    )
+
+    log(f"\nOutput:")
+    log(f"  JSON: {json_path}")
+    log(f"  CSV : {csv_path}")
+    log(f"  Log : {log_path}")
     log_file.close()
     return 0
 

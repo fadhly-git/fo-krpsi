@@ -29,7 +29,7 @@ if str(_SRC_DIR) not in sys.path:
     sys.path.insert(0, str(_SRC_DIR))
 
 from config import CFG, resolve_device, apply_cpu_safety_overrides
-from analysis.common import load_model, get_val_subset, get_dct_dim, CKPT_E1, CKPT_E2, CKPT_E3
+from analysis.common import load_model, get_test_subset, get_dct_dim, CKPT_E1, CKPT_E2, CKPT_E3
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = PROJECT_ROOT / "results" / "bab4_tambahan"
@@ -173,9 +173,9 @@ def run():
     size_e2_mb = os.path.getsize(str(CKPT_E2)) / (1024 * 1024)
     size_e3_mb = os.path.getsize(str(CKPT_E3)) / (1024 * 1024)
 
-    # Bangun batch dari val subset
+    # Bangun batch dari test subset
     print("[Task4] Membangun batch untuk timing...")
-    val_samples = get_val_subset()
+    val_samples = get_test_subset()
     img_batch_e1, dct_batch_e1 = build_batch(val_samples, BATCH_SIZE, dct_dim, device)
     img_batch_e2, dct_batch_e2 = build_batch(val_samples, BATCH_SIZE, 0, device)
     img_batch_e3, dct_batch_e3 = build_batch(val_samples, BATCH_SIZE, dct_dim, device)
